@@ -16,17 +16,22 @@ export async function POST(request) {
     const password = typeof body.password === "string" ? body.password : "";
 
     if (!username || !password) {
+      console.error("admin-login: username atau password kosong");
       return NextResponse.json({ error: "Login gagal" }, { status: 401 });
     }
 
     const db = await getDb();
     if (!db) {
-      return NextResponse.json({ error: "Login gagal" }, { status: 503 });
+      console.error("admin-login: Database tidak tersedia (MONGODB_URI tidak diset atau koneksi gagal)");
+      return NextResponse.json({ error: "Database tidak tersedia" }, { status: 503 });
     }
 
     const col = db.collection(COLLECTION);
     const count = await col.countDocuments();
+    console.log("admin-login: jumlah admin_users =", count);
+    
     if (count === 0 && process.env.ADMIN_USERNAME && process.env.ADMIN_INITIAL_PASSWORD) {
+      console.log("admin-login: Membuat admin user baru:", process.env.ADMIN_USERNAME);
       const hash = await bcrypt.hash(process.env.ADMIN_INITIAL_PASSWORD, 10);
       await col.insertOne({
         username: process.env.ADMIN_USERNAME,
@@ -36,17 +41,20 @@ export async function POST(request) {
 
     const user = await col.findOne({ username });
     if (!user || !user.passwordHash) {
+      console.error("admin-login: User tidak ditemukan:", username);
       return NextResponse.json({ error: "Login gagal" }, { status: 401 });
     }
 
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) {
+      console.error("admin-login: Password tidak cocok untuk user:", username);
       return NextResponse.json({ error: "Login gagal" }, { status: 401 });
     }
 
     const cookieValue = createAdminCookie();
     if (!cookieValue) {
-      return NextResponse.json({ error: "Login gagal" }, { status: 503 });
+      console.error("admin-login: ADMIN_SECRET tidak diset, tidak bisa buat cookie");
+      return NextResponse.json({ error: "Konfigurasi server tidak lengkap" }, { status: 503 });
     }
 
     const res = NextResponse.json({ ok: true });

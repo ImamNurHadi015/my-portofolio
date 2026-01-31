@@ -8,11 +8,16 @@ if (uri) {
     clientPromise = global._mongoClientPromise;
   } else {
     const client = new MongoClient(uri);
-    clientPromise = client.connect();
+    clientPromise = client.connect().catch((err) => {
+      console.error("MongoDB connection error:", err.message);
+      return null;
+    });
     if (process.env.NODE_ENV === "development") {
       global._mongoClientPromise = clientPromise;
     }
   }
+} else {
+  console.warn("MONGODB_URI tidak diset!");
 }
 
 /**
@@ -23,5 +28,6 @@ if (uri) {
 export async function getDb() {
   if (!clientPromise) return null;
   const c = await clientPromise;
+  if (!c) return null; // koneksi gagal
   return c.db("portfolio");
 }
