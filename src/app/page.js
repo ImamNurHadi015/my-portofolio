@@ -120,7 +120,7 @@ const socialLinks = [
   },
 ];
 
-const ADMIN_CLICK_WINDOW_MS = 2500;
+const ADMIN_CLICK_WINDOW_MS = 3000;
 
 export default function Home() {
   const router = useRouter();
@@ -136,6 +136,12 @@ export default function Home() {
   const [portfolioModalImage, setPortfolioModalImage] = useState(null);
   const adminClickCountRef = useRef(0);
   const adminClickTimeoutRef = useRef(null);
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginError, setLoginError] = useState(false);
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
 
   const [aboutSections, setAboutSections] = useState([]);
   const [skillsData, setSkillsData] = useState([]);
@@ -334,14 +340,14 @@ export default function Home() {
                           setIsFlipped(false);
                           return;
                         }
-                        // Berfikir.png visible: count 5 consecutive clicks to open admin
+                        // Berfikir.png visible: animasi coin (flip ke Aha) + hitung klik untuk admin
+                        setIsFlipped(true);
                         if (adminClickTimeoutRef.current) clearTimeout(adminClickTimeoutRef.current);
                         adminClickCountRef.current += 1;
                         if (adminClickCountRef.current >= 5) {
                           adminClickCountRef.current = 0;
-                          fetch("/api/admin-unlock", { method: "POST", credentials: "include" })
-                            .then(() => router.push("/admin"))
-                            .catch(() => {});
+                          setShowLoginModal(true);
+                          setLoginError(false);
                           return;
                         }
                         adminClickTimeoutRef.current = setTimeout(() => {
@@ -759,6 +765,123 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Modal login admin (muncul setelah 5 klik Berfikir.png) */}
+      {showLoginModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 transition-opacity duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="login-modal-title"
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 transition-all duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="login-modal-title" className="text-xl font-bold text-[#171717] mb-4">
+              Admin Login
+            </h2>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setLoginError(false);
+                setLoginSubmitting(true);
+                try {
+                  const res = await fetch("/api/admin-login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok && data.ok) {
+                    setShowLoginModal(false);
+                    setLoginUsername("");
+                    setLoginPassword("");
+                    router.push("/admin");
+                    return;
+                  }
+                  setLoginError(true);
+                  setTimeout(() => {
+                    setShowLoginModal(false);
+                    setLoginError(false);
+                    setLoginUsername("");
+                    setLoginPassword("");
+                    router.push("/");
+                  }, 2000);
+                } catch {
+                  setLoginError(true);
+                  setTimeout(() => {
+                    setShowLoginModal(false);
+                    setLoginError(false);
+                    router.push("/");
+                  }, 2000);
+                } finally {
+                  setLoginSubmitting(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label htmlFor="admin-username" className="block text-sm font-medium text-gray-700 mb-1">
+                  Username
+                </label>
+                <input
+                  id="admin-username"
+                  type="text"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-[#171717] focus:border-[#7bc8ff] focus:ring-1 focus:ring-[#7bc8ff] outline-none transition"
+                  autoComplete="username"
+                  required
+                  disabled={loginSubmitting}
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <input
+                  id="admin-password"
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-[#171717] focus:border-[#7bc8ff] focus:ring-1 focus:ring-[#7bc8ff] outline-none transition"
+                  autoComplete="current-password"
+                  required
+                  disabled={loginSubmitting}
+                />
+              </div>
+              {loginError && (
+                <p className="text-sm text-red-600 transition-opacity duration-200" role="alert">
+                  Login gagal
+                </p>
+              )}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={loginSubmitting}
+                  className="flex-1 rounded-full bg-[#7bc8ff] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#5fb8f5] disabled:opacity-70 transition"
+                >
+                  {loginSubmitting ? "Memeriksa…" : "Login"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    setLoginError(false);
+                    setLoginUsername("");
+                    setLoginPassword("");
+                  }}
+                  className="rounded-full bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300 transition"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const API = "/api";
 const fetchOpts = { credentials: "include" };
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [authChecking, setAuthChecking] = useState(true);
   const [aboutMe, setAboutMe] = useState([]);
   const [skills, setSkills] = useState([]);
   const [portfolio, setPortfolio] = useState([]);
@@ -36,8 +39,19 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    fetch(`${API}/admin-check`, fetchOpts).then((r) => {
+      if (r.status === 401) {
+        router.replace("/");
+        return;
+      }
+      setAuthChecking(false);
+    });
+  }, [router]);
+
+  useEffect(() => {
+    if (authChecking) return;
     load();
-  }, []);
+  }, [authChecking]);
 
   async function runMigrate() {
     setMigrateStatus("running");
@@ -119,7 +133,7 @@ export default function AdminPage() {
     { id: "public-speaking", label: "Public Speaking" },
   ];
 
-  if (loading) {
+  if (authChecking || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-gray-500">Memuat...</p>
@@ -140,7 +154,7 @@ export default function AdminPage() {
           {migrateStatus === "ok" && <span className="text-sm text-green-600">Migrasi selesai</span>}
           {migrateStatus === "error" && <span className="text-sm text-red-600">Migrasi gagal</span>}
           <Link href="/" className="rounded-full bg-[#171717] px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition">
-            Kembali ke Beranda
+            Kembali ke Halaman Utama
           </Link>
         </div>
       </header>
