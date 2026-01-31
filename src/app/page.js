@@ -4,8 +4,223 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-// Foto profil dari public/img/ (copy dari src/img/ ke public/img/ jika perlu)
 const profileImageSrc = "/img/Berfikir.png";
+const profileImageAha = "/img/Aha.png";
+
+// About Me subsections: zig-zag (icon kiri/kanan bergantian)
+const aboutSubsections = [
+  {
+    id: "profile",
+    iconSide: "left",
+    title: "About Me",
+    content: (
+      <p>
+        I am Imam Nurhadi, a Bachelor's graduate in Information Technology from Institut Teknologi Sepuluh Nopember (ITS).
+        I have a strong interest in Mobile Application and Website Development, focusing on building clean, functional, and user-friendly digital products.
+      </p>
+    ),
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  },
+  {
+    id: "education",
+    iconSide: "right",
+    title: "Education",
+    content: (
+      <ul className="space-y-4">
+        <li>
+          <p className="font-semibold text-[#171717]">Institut Teknologi Sepuluh Nopember (ITS)</p>
+          <p className="text-gray-600">Bachelor of Information Technology</p>
+          <p className="text-sm text-gray-500 mt-0.5">GPA: 3.60</p>
+        </li>
+        <li>
+          <p className="font-semibold text-[#171717]">MAN 2 Kota Kediri (Senior High School)</p>
+          <p className="text-sm text-gray-500 mt-0.5">Final Average Score: 87.47</p>
+        </li>
+      </ul>
+    ),
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
+  },
+  {
+    id: "experience",
+    iconSide: "left",
+    title: "Experience",
+    content: (
+      <>
+        <p className="font-semibold text-[#171717]">
+          Web Development Intern – PT. Suryasoft Konsultama
+        </p>
+        <p className="text-sm text-gray-500 mb-3">February 2025 – May 2025</p>
+        <p className="text-gray-600 leading-relaxed mb-3">
+          Worked as a Web Development Intern, collaborating with senior developers to build web applications using Laravel (PHP).
+        </p>
+        <p className="text-gray-600 leading-relaxed mb-4">
+          Responsibilities included implementing user interfaces based on Figma designs, developing functional features, applying business logic, and integrating databases.
+          This experience enhanced my understanding of web development workflows, teamwork, and best practices in building maintainable applications.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {["Laravel", "Web Development", "Figma (Software)", "Teamwork", "GitHub"].map((skill) => (
+            <span
+              key={skill}
+              className="inline-flex items-center rounded-full bg-[#7bc8ff]/15 px-3 py-1 text-sm font-medium text-[#0d7ab8]"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      </>
+    ),
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    ),
+  },
+  {
+    id: "organization",
+    iconSide: "right",
+    title: "Organization",
+    content: (
+      <ul className="space-y-6">
+        <li>
+          <p className="font-semibold text-[#171717]">External Relations Staff</p>
+          <p className="text-gray-600 text-sm">Himpunan Mahasiswa Teknologi Informasi ITS (HMIT ITS)</p>
+          <p className="text-sm text-gray-500 mt-0.5">Februari 2024 – Februari 2025 (1 tahun 1 bulan) · Surabaya, Jawa Timur</p>
+          <ul className="mt-2 list-disc pl-5 text-gray-600 leading-relaxed text-sm space-y-1">
+            <li>Memulai dan mengoordinasikan kunjungan perusahaan ke Telkom untuk memperkenalkan mahasiswa ke lingkungan industri profesional.</li>
+            <li>Merencanakan dan melaksanakan 2 kegiatan bakti sosial sebagai bagian dari keterlibatan komunitas organisasi.</li>
+            <li>Mengorganisir 2 seminar yang berfokus pada pengembangan akademik dan karir.</li>
+            <li>Memulai dan melakukan 2 kegiatan benchmarking antar-asosiasi untuk berbagi praktik terbaik dan memperluas jaringan organisasi.</li>
+          </ul>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {["Teamwork", "Public Relations"].map((skill) => (
+              <span
+                key={skill}
+                className="inline-flex items-center rounded-full bg-[#7bc8ff]/15 px-3 py-1 text-sm font-medium text-[#0d7ab8]"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </li>
+        <li>
+          <p className="font-semibold text-[#171717]">Training Speaker / Facilitator – PP LKMM FTEIC 2023/2024</p>
+          <p className="text-gray-600 text-sm">BEM FTEIC ITS</p>
+          <p className="text-sm text-gray-500 mt-0.5">Januari 2023 – Januari 2024 (1 tahun 1 bulan) · Surabaya, Jawa Timur · On-site</p>
+          <ul className="mt-2 list-disc pl-5 text-gray-600 leading-relaxed text-sm space-y-1">
+            <li>Berperan sebagai pembicara dan fasilitator dalam program pelatihan PP LKMM FTEIC 2023/2024 dengan menyampaikan dan menjelaskan materi pelatihan, memandu diskusi, dan membantu peserta memahami konsep yang disajikan.</li>
+            <li>Peran ini meningkatkan keterampilan berbicara di depan umum (public speaking), komunikasi, dan kepemimpinan.</li>
+          </ul>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {["Public Speaking", "Leadership"].map((skill) => (
+              <span
+                key={skill}
+                className="inline-flex items-center rounded-full bg-[#7bc8ff]/15 px-3 py-1 text-sm font-medium text-[#0d7ab8]"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </li>
+      </ul>
+    ),
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+];
+
+// Skills: kartu klik → detail expand di bawah (judul, deskripsi, proyek, galeri)
+const skillsData = [
+  {
+    id: "mobile",
+    title: "Mobile Apps",
+    icon: "/svg/hp.svg",
+    description: "Experience developing mobile applications for academic and personal projects. Focus on UI implementation, feature integration, and app logic.",
+    projects: [
+      "Academic mobile projects (ITS)",
+      "Personal apps with cross-platform development",
+    ],
+    certifications: ["/skills/mobile/mobile-1.png", "/skills/mobile/mobile-2.png"],
+  },
+  {
+    id: "website",
+    title: "Website",
+    icon: "/svg/web.svg",
+    description: "Experience building web applications using modern frameworks. Implemented responsive UI, business logic, and database integration.",
+    projects: [
+      "Web Development Intern – PT. Suryasoft Konsultama (Laravel)",
+      "Portfolio and personal websites (Next.js)",
+    ],
+    certifications: ["/skills/website-1.jpg", "/skills/website-2.jpg"],
+  },
+  {
+    id: "ai",
+    title: "Artificial Intelligence",
+    icon: "/svg/ai.svg",
+    description: "Academic projects related to AI and machine learning. Experience applying AI concepts for problem solving and automation.",
+    projects: [
+      "AI and ML coursework projects (ITS)",
+      "Problem solving and automation projects",
+    ],
+    certifications: ["/skills/ai/ai-1.png"],
+  },
+  {
+    id: "public-speaking",
+    title: "Public Speaking",
+    icon: "/svg/presentasi.svg",
+    description: "Experience presenting academic and organizational materials. Participated in seminars, presentations, and public speaking activities. Display certification images related to public speaking.",
+    projects: [
+      "Training Speaker / Facilitator – PP LKMM FTEIC (BEM FTEIC ITS)",
+      "Seminars and organizational presentations",
+    ],
+    certifications: ["/skills/public_speaking/PPLKMM.png", "/skills/public_speaking/hublu.png"],
+  },
+];
+
+// Portfolio: gambar di /public/portofolio/ (sesuai direktori: portofolio/public_speaking/ dll)
+const portfolioCategoryLabels = {
+  mobile: "Mobile Apps",
+  website: "Website",
+  ai: "Artificial Intelligence",
+  "public-speaking": "Public Speaking",
+};
+const portfolioItems = [
+  { filename: "mobile-1.png", categoryId: "mobile", src: "/portofolio/mobile-1.png" },
+  { filename: "mobile-2.png", categoryId: "mobile", src: "/portofolio/mobile-2.png" },
+  { filename: "website-1.png", categoryId: "website", src: "/portofolio/website-1.png" },
+  { filename: "website-2.png", categoryId: "website", src: "/portofolio/website-2.png" },
+  { filename: "ai-1.png", categoryId: "ai", src: "/portofolio/ai-1.png" },
+  { filename: "ai-2.png", categoryId: "ai", src: "/portofolio/ai-2.png" },
+  { filename: "public-speaking-1.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-1.jpeg" },
+  { filename: "public-speaking-2.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-2.jpeg" },
+  { filename: "public-speaking-3.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-3.jpeg" },
+  { filename: "public-speaking-4.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-4.jpeg" },
+  { filename: "public-speaking-5.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-5.jpeg" },
+  { filename: "public-speaking-6.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-6.jpeg" },
+];
+const portfolioFilters = [
+  { id: "all", label: "All" },
+  { id: "mobile", label: "Mobile Apps" },
+  { id: "website", label: "Website" },
+  { id: "ai", label: "Artificial Intelligence" },
+  { id: "public-speaking", label: "Public Speaking" },
+];
 
 // SVG bertaburan dengan jarak dari background lingkaran – seluruh SVG tanpa duplikasi (posisi %, ukuran, rotasi)
 const scatteredSvgs = [
@@ -80,6 +295,17 @@ export default function Home() {
   const portfolioRef = useRef(null);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [portfolioVisible, setPortfolioVisible] = useState(false);
+  const [hasRevealed, setHasRevealed] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [selectedSkillId, setSelectedSkillId] = useState(null);
+  const [portfolioFilter, setPortfolioFilter] = useState("all");
+  const [portfolioModalImage, setPortfolioModalImage] = useState(null);
+
+  // Reveal: konten + SVG muncul dari belakang lingkaran setelah mount
+  useEffect(() => {
+    const t = setTimeout(() => setHasRevealed(true), 150);
+    return () => clearTimeout(t);
+  }, []);
 
   // Navbar: transparan di hero, berwarna setelah scroll
   useEffect(() => {
@@ -112,9 +338,7 @@ export default function Home() {
 
     observer.observe(aboutEl);
     observer.observe(portfolioEl);
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -187,14 +411,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bagian Kanan - Foto Profil + SVG bertaburan */}
+          {/* Bagian Kanan - Foto Profil + SVG: sembunyi di belakang lingkaran, lalu muncul; klik = flip ke Aha */}
           <div className="relative flex min-h-[50vh] items-center justify-center md:min-h-[calc(100vh-80px)]">
             <div className="relative h-full w-full md:flex md:items-center md:justify-center">
-              {/* SVG bertaburan di sekitar foto */}
+              {/* SVG bertaburan: awalnya sembunyi (scale 0) di posisinya, lalu muncul dengan animasi */}
               {scatteredSvgs.map((item, i) => (
                 <div
                   key={i}
-                  className="absolute z-10 opacity-80 transition-transform duration-300 hover:scale-110 hover:opacity-100"
+                  className={`absolute z-10 hero-svg-item transition-transform duration-300 hover:scale-110 ${
+                    hasRevealed ? "revealed" : ""
+                  }`}
                   style={{
                     top: item.top,
                     bottom: item.bottom,
@@ -202,7 +428,12 @@ export default function Home() {
                     right: item.right,
                     width: item.size,
                     height: item.size,
-                    transform: `rotate(${item.rotate}deg)`,
+                    transform: hasRevealed
+                      ? `rotate(${item.rotate}deg) scale(1)`
+                      : "scale(0)",
+                    opacity: hasRevealed ? 0.8 : 0,
+                    transition: "opacity 0.5s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    transitionDelay: hasRevealed ? `${200 + i * 70}ms` : "0ms",
                   }}
                 >
                   <img
@@ -213,18 +444,55 @@ export default function Home() {
                   />
                 </div>
               ))}
-              {/* Foto profil dengan background lingkaran (ukuran lingkaran tetap, foto sedikit lebih besar di dalam) */}
+              {/* Lingkaran: konten di dalam awalnya scale kecil (bersembunyi), lalu reveal; klik = flip coin ke Aha */}
               <div className="relative z-0 flex h-[70vh] max-h-[600px] w-full items-center justify-center md:h-[85vh]">
                 <div className="relative h-[min(48vh,360px)] w-[min(48vh,360px)] rounded-full overflow-hidden bg-white shadow-xl ring-4 ring-white/60 md:h-[min(58vh,390px)] md:w-[min(58vh,390px)]">
-                  <div className="absolute inset-0 scale-110">
-                    <Image
-                      src={profileImageSrc}
-                      alt="Imam Nurhadi - Profile"
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 768px) 80vw, 45vw"
-                      priority
-                    />
+                  <div
+                    className={`absolute inset-0 scale-110 hero-circle-content ${
+                      hasRevealed ? "revealed" : ""
+                    }`}
+                  >
+                    <div
+                      className="hero-flip-wrapper h-full w-full"
+                      onClick={() => setIsFlipped((f) => !f)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setIsFlipped((f) => !f);
+                        }
+                      }}
+                      aria-label={
+                        isFlipped ? "Tampilkan foto Berfikir" : "Tampilkan foto Aha"
+                      }
+                    >
+                      <div
+                        className={`hero-flip-inner h-full w-full ${
+                          isFlipped ? "flipped" : ""
+                        }`}
+                      >
+                        <div className="hero-flip-front absolute inset-0">
+                          <Image
+                            src={profileImageSrc}
+                            alt="Imam Nurhadi - Berfikir"
+                            fill
+                            className="object-cover object-top"
+                            sizes="(max-width: 768px) 80vw, 45vw"
+                            priority
+                          />
+                        </div>
+                        <div className="hero-flip-back absolute inset-0">
+                          <Image
+                            src={profileImageAha}
+                            alt="Imam Nurhadi - Aha"
+                            fill
+                            className="object-cover object-top"
+                            sizes="(max-width: 768px) 80vw, 45vw"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -233,7 +501,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Me - animasi muncul saat scroll */}
+      {/* About Me - zig-zag layout, animasi fade/slide saat scroll */}
       <section
         ref={aboutRef}
         id="about"
@@ -243,30 +511,188 @@ export default function Home() {
             : "translate-y-10 opacity-0"
         }`}
       >
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-[#171717]">About Me</h2>
-          <p className="mt-4 text-gray-600 leading-relaxed">
-            Bagian About Me. Tambahkan deskripsi singkat tentang diri Anda,
-            pengalaman, dan passion di bidang Mobile dan Website Development.
-          </p>
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-[#171717] mb-16 md:mb-20 text-center md:text-left">
+            About Me
+          </h2>
+
+          <div className="space-y-16 md:space-y-24">
+            {aboutSubsections.map((sub, i) => (
+              <div
+                key={sub.id}
+                className={`about-zigzag grid gap-8 md:gap-12 md:grid-cols-2 md:items-center ${
+                  aboutVisible ? "about-zigzag-visible" : ""
+                }`}
+                style={{
+                  transitionDelay: aboutVisible ? `${120 + i * 100}ms` : "0ms",
+                }}
+              >
+                {/* Icon column - zig-zag: left or right by order */}
+                <div
+                  className={`flex justify-center order-2 ${
+                    sub.iconSide === "left" ? "md:order-1" : "md:order-2"
+                  }`}
+                >
+                  <div
+                    className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-[#7bc8ff]/10 text-[#7bc8ff] md:h-24 md:w-24"
+                    aria-hidden
+                  >
+                    <div className="h-10 w-10 md:h-12 md:w-12">
+                      {sub.icon}
+                    </div>
+                  </div>
+                </div>
+                {/* Text column */}
+                <div
+                  className={`order-1 ${
+                    sub.iconSide === "left" ? "md:order-2" : "md:order-1"
+                  } ${
+                    sub.iconSide === "right"
+                      ? "md:text-right md:flex md:flex-col md:items-end"
+                      : ""
+                  }`}
+                >
+                  <h3 className="text-xl font-bold text-[#171717] md:text-2xl">
+                    {sub.title}
+                  </h3>
+                  <div className="mt-3 text-gray-600 leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ul]:list-none [&>ul]:pl-0">
+                    {sub.content}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Skills - placeholder */}
+      {/* Skills - kartu klik, detail expand di bawah */}
       <section
         id="skills"
         className="scroll-mt-20 bg-gray-50 px-8 py-20 md:px-12 lg:px-20"
       >
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-[#171717]">Skills</h2>
-          <p className="mt-4 text-gray-600 leading-relaxed">
-            Bagian Skills. Daftar teknologi dan keahlian Anda (React, Next.js,
-            React Native, dll).
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-[#171717] mb-4">Skills</h2>
+          <p className="text-gray-600 leading-relaxed mb-12 max-w-2xl">
+            Klik kartu untuk melihat detail pengalaman, proyek terkait, dan galeri.
           </p>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+            {skillsData.map((skill) => (
+              <button
+                key={skill.id}
+                type="button"
+                onClick={() =>
+                  setSelectedSkillId((prev) =>
+                    prev === skill.id ? null : skill.id
+                  )
+                }
+                className={`skills-card group flex flex-col items-center gap-3 rounded-2xl border-2 px-6 py-8 text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 ${
+                  selectedSkillId === skill.id
+                    ? "border-[#7bc8ff] bg-[#7bc8ff]/10 shadow-lg"
+                    : "border-gray-200 bg-white hover:border-[#7bc8ff]/50 hover:bg-[#7bc8ff]/5"
+                }`}
+                aria-expanded={selectedSkillId === skill.id}
+                aria-controls={`skill-detail-${skill.id}`}
+              >
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#7bc8ff]/15 text-[#7bc8ff] transition-transform duration-200 group-hover:scale-105">
+                  <img
+                    src={skill.icon}
+                    alt=""
+                    className="h-8 w-8 object-contain [filter:brightness(0)_saturate(100%)_invert(58%)_sepia(69%)_saturate(1200%)_hue-rotate(186deg)_brightness(101%)_contrast(97%)]"
+                    aria-hidden
+                  />
+                </div>
+                <span className="font-semibold text-[#171717]">{skill.title}</span>
+              </button>
+            ))}
+          </div>
+
+          <div
+            className="skills-detail-wrapper overflow-hidden transition-[grid-template-rows] duration-500 ease-out"
+            style={{ gridTemplateRows: selectedSkillId ? "1fr" : "0fr" }}
+          >
+            <div className="min-h-0 overflow-hidden">
+            {selectedSkillId && (() => {
+              const skill = skillsData.find((s) => s.id === selectedSkillId);
+              if (!skill) return null;
+              return (
+                <div
+                  id={`skill-detail-${skill.id}`}
+                  className="skills-detail-inner rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8"
+                  role="region"
+                  aria-label={`Detail: ${skill.title}`}
+                >
+                  <div className="flex flex-col gap-6 md:gap-8">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="text-2xl font-bold text-[#171717]">
+                        {skill.title}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSkillId(null)}
+                        className="shrink-0 rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-[#171717] focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
+                        aria-label="Tutup detail"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {skill.description}
+                    </p>
+                    {skill.projects && skill.projects.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 font-semibold text-[#171717]">
+                          Proyek terkait
+                        </h4>
+                        <ul className="list-disc space-y-1 pl-5 text-gray-600">
+                          {skill.projects.map((project, i) => (
+                            <li key={i}>{project}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {skill.certifications && skill.certifications.length > 0 && (
+                      <div>
+                        <h4 className="mb-3 font-semibold text-[#171717]">
+                          Certification
+                        </h4>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                          {skill.certifications.map((src, i) => (
+                            <div
+                              key={`${skill.id}-${src}`}
+                              className="relative w-full overflow-hidden rounded-xl bg-gray-100"
+                            >
+                              <img
+                                src={src}
+                                alt=""
+                                className="block w-full max-w-full h-auto"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  const wrap = e.target.closest("div");
+                                  const fallback = wrap?.querySelector(".skill-certification-fallback");
+                                  if (fallback) fallback.classList.remove("hidden");
+                                }}
+                              />
+                              <span className="skill-certification-fallback absolute inset-0 hidden min-h-[120px] flex items-center justify-center bg-gray-100 text-sm text-gray-400 rounded-xl" aria-hidden>
+                                Sertifikat tidak tersedia
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Portfolio - animasi muncul saat scroll */}
+      {/* Portfolio - filter kategori, grid gambar, modal preview */}
       <section
         ref={portfolioRef}
         id="portfolio"
@@ -276,13 +702,107 @@ export default function Home() {
             : "translate-y-10 opacity-0"
         }`}
       >
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-[#171717]">Portfolio</h2>
-          <p className="mt-4 text-gray-600 leading-relaxed">
-            Bagian Portfolio. Tampilkan proyek-proyek Anda dengan gambar dan
-            tautan.
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-[#171717] mb-4">Portfolio</h2>
+          <p className="text-gray-600 leading-relaxed mb-10 max-w-2xl">
+            Proyek dan karya berdasarkan kategori.
           </p>
+
+          {/* Filter buttons */}
+          <div className="flex flex-wrap gap-2 mb-10">
+            {portfolioFilters.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setPortfolioFilter(f.id)}
+                className={`rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+                  portfolioFilter === f.id
+                    ? "bg-[#7bc8ff] text-white shadow-sm"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Portfolio grid */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {(portfolioFilter === "all"
+              ? portfolioItems
+              : portfolioItems.filter((i) => i.categoryId === portfolioFilter)
+            ).map((item) => (
+              <button
+                key={item.filename}
+                type="button"
+                onClick={() =>
+                  setPortfolioModalImage(item.src)
+                }
+                className="portfolio-item group relative overflow-hidden rounded-xl bg-gray-100 text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                  <Image
+                    src={item.src}
+                    alt=""
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    onError={(e) => {
+                      const wrap = e.target.closest(".relative");
+                      if (e.target.parentElement) e.target.parentElement.style.display = "none";
+                      const fallback = wrap?.querySelector(".portfolio-item-fallback");
+                      if (fallback) fallback.classList.remove("hidden");
+                    }}
+                  />
+                  <span className="portfolio-item-fallback absolute inset-0 hidden flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl" aria-hidden>
+                    Gambar tidak tersedia
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-medium text-[#171717]">
+                  {portfolioCategoryLabels[item.categoryId]}
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Modal preview */}
+        {portfolioModalImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setPortfolioModalImage(null)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setPortfolioModalImage(null);
+            }}
+            aria-label="Tutup preview"
+          >
+            <div
+              className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              role="presentation"
+            >
+              <Image
+                src={portfolioModalImage}
+                alt="Preview"
+                width={800}
+                height={600}
+                className="max-h-[90vh] w-auto object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => setPortfolioModalImage(null)}
+                className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-gray-700 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
+                aria-label="Tutup"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Contact - placeholder */}
