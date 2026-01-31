@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/mongodb";
 import { createAdminCookie, COOKIE_NAME } from "@/lib/admin-auth";
 
