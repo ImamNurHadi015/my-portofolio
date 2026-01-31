@@ -3,217 +3,48 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const profileImageSrc = "/img/Berfikir.png";
 const profileImageAha = "/img/Aha.png";
 
-// About Me subsections: zig-zag (icon kiri/kanan bergantian)
-const aboutSubsections = [
-  {
-    id: "profile",
-    iconSide: "left",
-    title: "About Me",
-    content: (
-      <p>
-        I am Imam Nurhadi, a Bachelor's graduate in Information Technology from Institut Teknologi Sepuluh Nopember (ITS).
-        I have a strong interest in Mobile Application and Website Development, focusing on building clean, functional, and user-friendly digital products.
-      </p>
-    ),
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    id: "education",
-    iconSide: "right",
-    title: "Education",
-    content: (
-      <ul className="space-y-4">
-        <li>
-          <p className="font-semibold text-[#171717]">Institut Teknologi Sepuluh Nopember (ITS)</p>
-          <p className="text-gray-600">Bachelor of Information Technology</p>
-          <p className="text-sm text-gray-500 mt-0.5">GPA: 3.60</p>
-        </li>
-        <li>
-          <p className="font-semibold text-[#171717]">MAN 2 Kota Kediri (Senior High School)</p>
-          <p className="text-sm text-gray-500 mt-0.5">Final Average Score: 87.47</p>
-        </li>
-      </ul>
-    ),
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c3 3 9 3 12 0v-5" />
-      </svg>
-    ),
-  },
-  {
-    id: "experience",
-    iconSide: "left",
-    title: "Experience",
-    content: (
-      <>
-        <p className="font-semibold text-[#171717]">
-          Web Development Intern – PT. Suryasoft Konsultama
-        </p>
-        <p className="text-sm text-gray-500 mb-3">February 2025 – May 2025</p>
-        <p className="text-gray-600 leading-relaxed mb-3">
-          Worked as a Web Development Intern, collaborating with senior developers to build web applications using Laravel (PHP).
-        </p>
-        <p className="text-gray-600 leading-relaxed mb-4">
-          Responsibilities included implementing user interfaces based on Figma designs, developing functional features, applying business logic, and integrating databases.
-          This experience enhanced my understanding of web development workflows, teamwork, and best practices in building maintainable applications.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {["Laravel", "Web Development", "Figma (Software)", "Teamwork", "GitHub"].map((skill) => (
-            <span
-              key={skill}
-              className="inline-flex items-center rounded-full bg-[#7bc8ff]/15 px-3 py-1 text-sm font-medium text-[#0d7ab8]"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </>
-    ),
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-      </svg>
-    ),
-  },
-  {
-    id: "organization",
-    iconSide: "right",
-    title: "Organization",
-    content: (
-      <ul className="space-y-6">
-        <li>
-          <p className="font-semibold text-[#171717]">External Relations Staff</p>
-          <p className="text-gray-600 text-sm">Himpunan Mahasiswa Teknologi Informasi ITS (HMIT ITS)</p>
-          <p className="text-sm text-gray-500 mt-0.5">Februari 2024 – Februari 2025 (1 tahun 1 bulan) · Surabaya, Jawa Timur</p>
-          <ul className="mt-2 list-disc pl-5 text-gray-600 leading-relaxed text-sm space-y-1">
-            <li>Memulai dan mengoordinasikan kunjungan perusahaan ke Telkom untuk memperkenalkan mahasiswa ke lingkungan industri profesional.</li>
-            <li>Merencanakan dan melaksanakan 2 kegiatan bakti sosial sebagai bagian dari keterlibatan komunitas organisasi.</li>
-            <li>Mengorganisir 2 seminar yang berfokus pada pengembangan akademik dan karir.</li>
-            <li>Memulai dan melakukan 2 kegiatan benchmarking antar-asosiasi untuk berbagi praktik terbaik dan memperluas jaringan organisasi.</li>
-          </ul>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {["Teamwork", "Public Relations"].map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center rounded-full bg-[#7bc8ff]/15 px-3 py-1 text-sm font-medium text-[#0d7ab8]"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </li>
-        <li>
-          <p className="font-semibold text-[#171717]">Training Speaker / Facilitator – PP LKMM FTEIC 2023/2024</p>
-          <p className="text-gray-600 text-sm">BEM FTEIC ITS</p>
-          <p className="text-sm text-gray-500 mt-0.5">Januari 2023 – Januari 2024 (1 tahun 1 bulan) · Surabaya, Jawa Timur · On-site</p>
-          <ul className="mt-2 list-disc pl-5 text-gray-600 leading-relaxed text-sm space-y-1">
-            <li>Berperan sebagai pembicara dan fasilitator dalam program pelatihan PP LKMM FTEIC 2023/2024 dengan menyampaikan dan menjelaskan materi pelatihan, memandu diskusi, dan membantu peserta memahami konsep yang disajikan.</li>
-            <li>Peran ini meningkatkan keterampilan berbicara di depan umum (public speaking), komunikasi, dan kepemimpinan.</li>
-          </ul>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {["Public Speaking", "Leadership"].map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center rounded-full bg-[#7bc8ff]/15 px-3 py-1 text-sm font-medium text-[#0d7ab8]"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </li>
-      </ul>
-    ),
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-];
+// Icons for About Me sections (by name from API)
+const ABOUT_ICONS = {
+  profile: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  education: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+    </svg>
+  ),
+  experience: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </svg>
+  ),
+  organization: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+};
 
-// Skills: kartu klik → detail expand di bawah (judul, deskripsi, proyek, galeri)
-const skillsData = [
-  {
-    id: "mobile",
-    title: "Mobile Apps",
-    icon: "/svg/hp.svg",
-    description: "Experience developing mobile applications for academic and personal projects. Focus on UI implementation, feature integration, and app logic.",
-    projects: [
-      "Academic mobile projects (ITS)",
-      "Personal apps with cross-platform development",
-    ],
-    certifications: ["/skills/mobile/mobile-1.png", "/skills/mobile/mobile-2.png"],
-  },
-  {
-    id: "website",
-    title: "Website",
-    icon: "/svg/web.svg",
-    description: "Experience building web applications using modern frameworks. Implemented responsive UI, business logic, and database integration.",
-    projects: [
-      "Web Development Intern – PT. Suryasoft Konsultama (Laravel)",
-      "Portfolio and personal websites (Next.js)",
-    ],
-    certifications: ["/skills/website-1.jpg", "/skills/website-2.jpg"],
-  },
-  {
-    id: "ai",
-    title: "Artificial Intelligence",
-    icon: "/svg/ai.svg",
-    description: "Academic projects related to AI and machine learning. Experience applying AI concepts for problem solving and automation.",
-    projects: [
-      "AI and ML coursework projects (ITS)",
-      "Problem solving and automation projects",
-    ],
-    certifications: ["/skills/ai/ai-1.png"],
-  },
-  {
-    id: "public-speaking",
-    title: "Public Speaking",
-    icon: "/svg/presentasi.svg",
-    description: "Experience presenting academic and organizational materials. Participated in seminars, presentations, and public speaking activities. Display certification images related to public speaking.",
-    projects: [
-      "Training Speaker / Facilitator – PP LKMM FTEIC (BEM FTEIC ITS)",
-      "Seminars and organizational presentations",
-    ],
-    certifications: ["/skills/public_speaking/PPLKMM.png", "/skills/public_speaking/hublu.png"],
-  },
-];
-
-// Portfolio: gambar di /public/portofolio/ (sesuai direktori: portofolio/public_speaking/ dll)
+// Portfolio labels and filters (static)
 const portfolioCategoryLabels = {
   mobile: "Mobile Apps",
   website: "Website",
   ai: "Artificial Intelligence",
   "public-speaking": "Public Speaking",
 };
-const portfolioItems = [
-  { filename: "mobile-1.png", categoryId: "mobile", src: "/portofolio/mobile-1.png" },
-  { filename: "mobile-2.png", categoryId: "mobile", src: "/portofolio/mobile-2.png" },
-  { filename: "website-1.png", categoryId: "website", src: "/portofolio/website-1.png" },
-  { filename: "website-2.png", categoryId: "website", src: "/portofolio/website-2.png" },
-  { filename: "ai-1.png", categoryId: "ai", src: "/portofolio/ai-1.png" },
-  { filename: "ai-2.png", categoryId: "ai", src: "/portofolio/ai-2.png" },
-  { filename: "public-speaking-1.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-1.jpeg" },
-  { filename: "public-speaking-2.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-2.jpeg" },
-  { filename: "public-speaking-3.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-3.jpeg" },
-  { filename: "public-speaking-4.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-4.jpeg" },
-  { filename: "public-speaking-5.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-5.jpeg" },
-  { filename: "public-speaking-6.jpeg", categoryId: "public-speaking", src: "/portofolio/public_speaking/public-speaking-6.jpeg" },
-];
 const portfolioFilters = [
   { id: "all", label: "All" },
   { id: "mobile", label: "Mobile Apps" },
@@ -289,7 +120,10 @@ const socialLinks = [
   },
 ];
 
+const ADMIN_CLICK_WINDOW_MS = 2500;
+
 export default function Home() {
+  const router = useRouter();
   const [navbarScrolled, setNavbarScrolled] = useState(false);
   const aboutRef = useRef(null);
   const portfolioRef = useRef(null);
@@ -300,6 +134,47 @@ export default function Home() {
   const [selectedSkillId, setSelectedSkillId] = useState(null);
   const [portfolioFilter, setPortfolioFilter] = useState("all");
   const [portfolioModalImage, setPortfolioModalImage] = useState(null);
+  const adminClickCountRef = useRef(0);
+  const adminClickTimeoutRef = useRef(null);
+
+  const [aboutSections, setAboutSections] = useState([]);
+  const [skillsData, setSkillsData] = useState([]);
+  const [portfolioItems, setPortfolioItems] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [aboutRes, skillsRes, portfolioRes] = await Promise.all([
+          fetch("/api/about-me", { credentials: "include" }),
+          fetch("/api/skills", { credentials: "include" }),
+          fetch("/api/portfolio", { credentials: "include" }),
+        ]);
+        const about = aboutRes.ok ? await aboutRes.json() : [];
+        const skills = skillsRes.ok ? await skillsRes.json() : [];
+        const portfolio = portfolioRes.ok ? await portfolioRes.json() : [];
+        setAboutSections(Array.isArray(about) ? about : []);
+        setSkillsData(Array.isArray(skills) ? skills : []);
+        setPortfolioItems(
+          Array.isArray(portfolio)
+            ? portfolio.map((p) => ({
+                id: p.id,
+                filename: p.filename || p.title,
+                categoryId: p.category,
+                src: p.image,
+              }))
+            : []
+        );
+      } catch {
+        setAboutSections([]);
+        setSkillsData([]);
+        setPortfolioItems([]);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   // Reveal: konten + SVG muncul dari belakang lingkaran setelah mount
   useEffect(() => {
@@ -454,13 +329,31 @@ export default function Home() {
                   >
                     <div
                       className="hero-flip-wrapper h-full w-full"
-                      onClick={() => setIsFlipped((f) => !f)}
+                      onClick={() => {
+                        if (isFlipped) {
+                          setIsFlipped(false);
+                          return;
+                        }
+                        // Berfikir.png visible: count 5 consecutive clicks to open admin
+                        if (adminClickTimeoutRef.current) clearTimeout(adminClickTimeoutRef.current);
+                        adminClickCountRef.current += 1;
+                        if (adminClickCountRef.current >= 5) {
+                          adminClickCountRef.current = 0;
+                          fetch("/api/admin-unlock", { method: "POST", credentials: "include" })
+                            .then(() => router.push("/admin"))
+                            .catch(() => {});
+                          return;
+                        }
+                        adminClickTimeoutRef.current = setTimeout(() => {
+                          adminClickCountRef.current = 0;
+                        }, ADMIN_CLICK_WINDOW_MS);
+                      }}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setIsFlipped((f) => !f);
+                          if (isFlipped) setIsFlipped(false);
                         }
                       }}
                       aria-label={
@@ -517,50 +410,56 @@ export default function Home() {
           </h2>
 
           <div className="space-y-16 md:space-y-24">
-            {aboutSubsections.map((sub, i) => (
-              <div
-                key={sub.id}
-                className={`about-zigzag grid gap-8 md:gap-12 md:grid-cols-2 md:items-center ${
-                  aboutVisible ? "about-zigzag-visible" : ""
-                }`}
-                style={{
-                  transitionDelay: aboutVisible ? `${120 + i * 100}ms` : "0ms",
-                }}
-              >
-                {/* Icon column - zig-zag: left or right by order */}
-                <div
-                  className={`flex justify-center order-2 ${
-                    sub.iconSide === "left" ? "md:order-1" : "md:order-2"
-                  }`}
-                >
+            {dataLoading ? (
+              <p className="text-gray-500 text-center py-8">Memuat...</p>
+            ) : aboutSections.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Belum ada data.</p>
+            ) : (
+              aboutSections
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((sub, i) => (
                   <div
-                    className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-[#7bc8ff]/10 text-[#7bc8ff] md:h-24 md:w-24"
-                    aria-hidden
+                    key={sub.id}
+                    className={`about-zigzag grid gap-8 md:gap-12 md:grid-cols-2 md:items-center ${
+                      aboutVisible ? "about-zigzag-visible" : ""
+                    }`}
+                    style={{
+                      transitionDelay: aboutVisible ? `${120 + i * 100}ms` : "0ms",
+                    }}
                   >
-                    <div className="h-10 w-10 md:h-12 md:w-12">
-                      {sub.icon}
+                    <div
+                      className={`flex justify-center order-2 ${
+                        sub.iconSide === "left" ? "md:order-1" : "md:order-2"
+                      }`}
+                    >
+                      <div
+                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-[#7bc8ff]/10 text-[#7bc8ff] md:h-24 md:w-24"
+                        aria-hidden
+                      >
+                        <div className="h-10 w-10 md:h-12 md:w-12">
+                          {ABOUT_ICONS[sub.name] ?? ABOUT_ICONS.profile}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`order-1 ${
+                        sub.iconSide === "left" ? "md:order-2" : "md:order-1"
+                      } ${
+                        sub.iconSide === "right"
+                          ? "md:text-right md:flex md:flex-col md:items-end"
+                          : ""
+                      }`}
+                    >
+                      <h3 className="text-xl font-bold text-[#171717] md:text-2xl">
+                        {sub.title}
+                      </h3>
+                      <div className="mt-3 text-gray-600 leading-relaxed whitespace-pre-line [&>p]:mb-3 [&>p:last-child]:mb-0">
+                        {sub.description}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {/* Text column */}
-                <div
-                  className={`order-1 ${
-                    sub.iconSide === "left" ? "md:order-2" : "md:order-1"
-                  } ${
-                    sub.iconSide === "right"
-                      ? "md:text-right md:flex md:flex-col md:items-end"
-                      : ""
-                  }`}
-                >
-                  <h3 className="text-xl font-bold text-[#171717] md:text-2xl">
-                    {sub.title}
-                  </h3>
-                  <div className="mt-3 text-gray-600 leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ul]:list-none [&>ul]:pl-0">
-                    {sub.content}
-                  </div>
-                </div>
-              </div>
-            ))}
+                ))
+            )}
           </div>
         </div>
       </section>
@@ -576,6 +475,12 @@ export default function Home() {
             Klik kartu untuk melihat detail pengalaman, proyek terkait, dan galeri.
           </p>
 
+          {dataLoading ? (
+            <p className="text-gray-500 py-8">Memuat...</p>
+          ) : skillsData.length === 0 ? (
+            <p className="text-gray-500 py-8">Belum ada data.</p>
+          ) : (
+          <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
             {skillsData.map((skill) => (
               <button
@@ -689,6 +594,8 @@ export default function Home() {
             })()}
             </div>
           </div>
+          </>
+          )}
         </div>
       </section>
 
@@ -727,13 +634,18 @@ export default function Home() {
           </div>
 
           {/* Portfolio grid */}
+          {dataLoading ? (
+            <p className="text-gray-500 py-8">Memuat...</p>
+          ) : portfolioItems.length === 0 ? (
+            <p className="text-gray-500 py-8">Belum ada data.</p>
+          ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {(portfolioFilter === "all"
               ? portfolioItems
               : portfolioItems.filter((i) => i.categoryId === portfolioFilter)
             ).map((item) => (
               <button
-                key={item.filename}
+                key={item.id ?? item.filename}
                 type="button"
                 onClick={() =>
                   setPortfolioModalImage(item.src)
@@ -764,6 +676,7 @@ export default function Home() {
               </button>
             ))}
           </div>
+          )}
         </div>
 
         {/* Modal preview */}
