@@ -19,6 +19,7 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState("about");
   const [editing, setEditing] = useState({ about: null, skills: null, portfolio: null, social: null });
   const [form, setForm] = useState({});
+  const [skillInput, setSkillInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const socialTypes = [
@@ -81,10 +82,14 @@ export default function AdminPage() {
 
   async function saveAbout() {
     const id = editing.about;
-    const body = { name: form.name, title: form.title, description: form.description, iconSide: form.iconSide, order: form.order };
-    const url = id ? `${API}/about-me` : `${API}/about-me`;
-    const method = id ? "PUT" : "POST";
-    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(id ? { id, ...body } : body), ...fetchOpts });
+    const isNew = !id || String(id).startsWith("new-");
+    const name = form.name || "profile";
+    let body = { name, title: form.title ?? "", iconSide: form.iconSide ?? "left", order: form.order ?? 0 };
+    if (name === "profile") body.description = form.description ?? "";
+    if (name === "education") Object.assign(body, { institution: form.institution ?? "", field: form.field ?? "", startYear: form.startYear ?? "", endYear: form.endYear ?? "", score: form.score ?? "", skills: form.skills ?? [] });
+    if (name === "experience") Object.assign(body, { company: form.company ?? "", industry: form.industry ?? "", startDate: form.startDate ?? "", endDate: form.endDate ?? "", roleDescription: form.roleDescription ?? "", jobDescription: form.jobDescription ?? "", skills: form.skills ?? [] });
+    if (name === "organization") Object.assign(body, { position: form.position ?? "", organization: form.organization ?? "", location: form.location ?? "", startDate: form.startDate ?? "", endDate: form.endDate ?? "", jobDescription: form.jobDescription ?? "", skills: form.skills ?? [] });
+    const res = await fetch(`${API}/about-me`, { method: isNew ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(isNew ? body : { id, ...body }), ...fetchOpts });
     if (res.ok) {
       setEditing((e) => ({ ...e, about: null }));
       setForm({});
@@ -212,51 +217,145 @@ export default function AdminPage() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* About Me */}
+        {/* About Me - structured: Profile, Education, Experience, Organization */}
         {activeSection === "about" && (
           <section>
             <h2 className="text-lg font-bold text-[#171717] mb-4">Manage About Me</h2>
             {editing.about !== null ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
-                <input placeholder="Name (id)" value={form.name ?? ""} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
-                <input placeholder="Title" value={form.title ?? ""} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
-                <textarea placeholder="Description" value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={4} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
-                <select value={form.iconSide ?? "left"} onChange={(e) => setForm((f) => ({ ...f, iconSide: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-4">
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                <input placeholder="Section Title" value={form.title ?? ""} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3" />
+                <select value={form.iconSide ?? "left"} onChange={(e) => setForm((f) => ({ ...f, iconSide: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3">
                   <option value="left">Icon kiri</option>
                   <option value="right">Icon kanan</option>
                 </select>
-                <div className="flex gap-2">
+                {form.name === "profile" && (
+                  <textarea placeholder="Description" value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={4} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3" />
+                )}
+                {form.name === "education" && (
+                  <>
+                    <input placeholder="Institution Name" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <input placeholder="Field of Study / Major" value={form.field ?? ""} onChange={(e) => setForm((f) => ({ ...f, field: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <input placeholder="Start Year (opsional)" value={form.startYear ?? ""} onChange={(e) => setForm((f) => ({ ...f, startYear: e.target.value }))} className="rounded-lg border border-gray-300 px-3 py-2" />
+                      <input placeholder="End Year (opsional)" value={form.endYear ?? ""} onChange={(e) => setForm((f) => ({ ...f, endYear: e.target.value }))} className="rounded-lg border border-gray-300 px-3 py-2" />
+                    </div>
+                    <input placeholder="Final Score (e.g. GPA 3.60)" value={form.score ?? ""} onChange={(e) => setForm((f) => ({ ...f, score: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700 mb-1">Related Skills (tekan Enter atau koma untuk tambah)</p>
+                      <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const v = skillInput.trim(); if (v) setForm((f) => ({ ...f, skills: [...(f.skills ?? []), v] })); setSkillInput(""); } }} placeholder="Ketik skill lalu Enter" className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                      <div className="flex flex-wrap gap-2">
+                        {(form.skills ?? []).map((s, i) => (
+                          <span key={i} className="inline-flex items-center rounded-full bg-[#7bc8ff]/20 px-3 py-1 text-sm text-[#0d7ab8]">
+                            {s}
+                            <button type="button" onClick={() => setForm((f) => ({ ...f, skills: (f.skills ?? []).filter((_, j) => j !== i) }))} className="ml-1.5 text-gray-500 hover:text-red-600" aria-label="Hapus">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {form.name === "experience" && (
+                  <>
+                    <input placeholder="Company Name" value={form.company ?? ""} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <input placeholder="Industry / Field" value={form.industry ?? ""} onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <input placeholder="Start Date (opsional)" value={form.startDate ?? ""} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} className="rounded-lg border border-gray-300 px-3 py-2" />
+                      <input placeholder="End Date (opsional)" value={form.endDate ?? ""} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} className="rounded-lg border border-gray-300 px-3 py-2" />
+                    </div>
+                    <input placeholder="Role Description" value={form.roleDescription ?? ""} onChange={(e) => setForm((f) => ({ ...f, roleDescription: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <textarea placeholder="Job Description" value={form.jobDescription ?? ""} onChange={(e) => setForm((f) => ({ ...f, jobDescription: e.target.value }))} rows={4} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700 mb-1">Related Skills (Enter atau koma)</p>
+                      <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const v = skillInput.trim(); if (v) setForm((f) => ({ ...f, skills: [...(f.skills ?? []), v] })); setSkillInput(""); } }} placeholder="Ketik skill lalu Enter" className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                      <div className="flex flex-wrap gap-2">
+                        {(form.skills ?? []).map((s, i) => (
+                          <span key={i} className="inline-flex items-center rounded-full bg-[#7bc8ff]/20 px-3 py-1 text-sm text-[#0d7ab8]">
+                            {s}
+                            <button type="button" onClick={() => setForm((f) => ({ ...f, skills: (f.skills ?? []).filter((_, j) => j !== i) }))} className="ml-1.5 text-gray-500 hover:text-red-600">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {form.name === "organization" && (
+                  <>
+                    <input placeholder="Position / Role" value={form.position ?? ""} onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <input placeholder="Organization Name" value={form.organization ?? ""} onChange={(e) => setForm((f) => ({ ...f, organization: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <input placeholder="Location" value={form.location ?? ""} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <input placeholder="Start Date (opsional)" value={form.startDate ?? ""} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} className="rounded-lg border border-gray-300 px-3 py-2" />
+                      <input placeholder="End Date (opsional)" value={form.endDate ?? ""} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} className="rounded-lg border border-gray-300 px-3 py-2" />
+                    </div>
+                    <textarea placeholder="Job Description" value={form.jobDescription ?? ""} onChange={(e) => setForm((f) => ({ ...f, jobDescription: e.target.value }))} rows={4} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700 mb-1">Related Skills (Enter atau koma)</p>
+                      <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const v = skillInput.trim(); if (v) setForm((f) => ({ ...f, skills: [...(f.skills ?? []), v] })); setSkillInput(""); } }} placeholder="Ketik skill lalu Enter" className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                      <div className="flex flex-wrap gap-2">
+                        {(form.skills ?? []).map((s, i) => (
+                          <span key={i} className="inline-flex items-center rounded-full bg-[#7bc8ff]/20 px-3 py-1 text-sm text-[#0d7ab8]">
+                            {s}
+                            <button type="button" onClick={() => setForm((f) => ({ ...f, skills: (f.skills ?? []).filter((_, j) => j !== i) }))} className="ml-1.5 text-gray-500 hover:text-red-600">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2 pt-2">
                   <button type="button" onClick={saveAbout} className="rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">Simpan</button>
-                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: null })); setForm({}); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: null })); setForm({}); setSkillInput(""); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
                 </div>
               </div>
-            ) : (
-              <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: "new" })); setForm({ name: "", title: "", description: "", iconSide: "left", order: aboutMe.length }); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
-                + Tambah About Me
-              </button>
-            )}
-            <ul className="space-y-3">
-              {aboutMe.map((item) => (
-                <li key={item.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-[#171717]">{item.title}</p>
-                    <p className="text-sm text-gray-500">{item.name}</p>
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: item.id })); setForm({ name: item.name, title: item.title, description: item.description, iconSide: item.iconSide ?? "left", order: item.order ?? 0 }); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
-                    {confirmDelete === item.id ? (
-                      <>
-                        <button type="button" onClick={() => deleteAbout(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>
-                        <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button>
-                      </>
-                    ) : (
-                      <button type="button" onClick={() => setConfirmDelete(item.id)} className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">Hapus</button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            ) : null}
+            {/* Profile */}
+            <h3 className="text-md font-semibold text-[#171717] mt-6 mb-2">Profile</h3>
+            {aboutMe.filter((x) => x.name === "profile").map((item) => (
+              <li key={item.id} className="list-none bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4 mb-3">
+                <div className="line-clamp-2 text-gray-600 flex-1">{item.title || "About Me"}</div>
+                <div className="flex gap-2 shrink-0">
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: item.id })); setForm({ name: "profile", title: item.title, description: item.description, iconSide: item.iconSide ?? "left", order: item.order ?? 0 }); setSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                  {confirmDelete === item.id ? (<><button type="button" onClick={() => deleteAbout(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button><button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button></>) : (<button type="button" onClick={() => setConfirmDelete(item.id)} className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">Hapus</button>)}
+                </div>
+              </li>
+            ))}
+            <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: "new-profile" })); setForm({ name: "profile", title: "About Me", description: "", iconSide: "left", order: aboutMe.length }); setSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">+ Tambah Profile</button>
+            {/* Education */}
+            <h3 className="text-md font-semibold text-[#171717] mt-6 mb-2">Education</h3>
+            {aboutMe.filter((x) => x.name === "education").map((item) => (
+              <li key={item.id} className="list-none bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4 mb-3">
+                <div><p className="font-semibold text-[#171717]">{item.institution || item.title}</p><p className="text-sm text-gray-500">{item.field} {item.score ? ` · ${item.score}` : ""}</p></div>
+                <div className="flex gap-2 shrink-0">
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: item.id })); setForm({ name: "education", title: item.title, institution: item.institution, field: item.field, startYear: item.startYear, endYear: item.endYear, score: item.score, skills: item.skills ?? [], iconSide: item.iconSide ?? "left", order: item.order ?? 0 }); setSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                  {confirmDelete === item.id ? (<><button type="button" onClick={() => deleteAbout(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button><button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button></>) : (<button type="button" onClick={() => setConfirmDelete(item.id)} className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">Hapus</button>)}
+                </div>
+              </li>
+            ))}
+            <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: "new-education" })); setForm({ name: "education", title: "Education", institution: "", field: "", startYear: "", endYear: "", score: "", skills: [], iconSide: "right", order: aboutMe.length }); setSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">+ Tambah Education</button>
+            {/* Experience */}
+            <h3 className="text-md font-semibold text-[#171717] mt-6 mb-2">Experience</h3>
+            {aboutMe.filter((x) => x.name === "experience").map((item) => (
+              <li key={item.id} className="list-none bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4 mb-3">
+                <div><p className="font-semibold text-[#171717]">{item.company} {item.industry ? ` · ${item.industry}` : ""}</p>{(item.startDate || item.endDate) && <p className="text-sm text-gray-500">{[item.startDate, item.endDate].filter(Boolean).join(" – ")}</p>}</div>
+                <div className="flex gap-2 shrink-0">
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: item.id })); setForm({ name: "experience", title: item.title, company: item.company, industry: item.industry, startDate: item.startDate, endDate: item.endDate, roleDescription: item.roleDescription, jobDescription: item.jobDescription, skills: item.skills ?? [], iconSide: item.iconSide ?? "left", order: item.order ?? 0 }); setSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                  {confirmDelete === item.id ? (<><button type="button" onClick={() => deleteAbout(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button><button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button></>) : (<button type="button" onClick={() => setConfirmDelete(item.id)} className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">Hapus</button>)}
+                </div>
+              </li>
+            ))}
+            <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: "new-experience" })); setForm({ name: "experience", title: "Experience", company: "", industry: "", startDate: "", endDate: "", roleDescription: "", jobDescription: "", skills: [], iconSide: "left", order: aboutMe.length }); setSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">+ Tambah Experience</button>
+            {/* Organization */}
+            <h3 className="text-md font-semibold text-[#171717] mt-6 mb-2">Organization</h3>
+            {aboutMe.filter((x) => x.name === "organization").map((item) => (
+              <li key={item.id} className="list-none bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4 mb-3">
+                <div><p className="font-semibold text-[#171717]">{item.position} · {item.organization}</p>{(item.location || item.startDate || item.endDate) && <p className="text-sm text-gray-500">{[item.location, item.startDate && item.endDate ? `${item.startDate} – ${item.endDate}` : item.startDate || item.endDate].filter(Boolean).join(" · ")}</p>}</div>
+                <div className="flex gap-2 shrink-0">
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: item.id })); setForm({ name: "organization", title: item.title, position: item.position, organization: item.organization, location: item.location, startDate: item.startDate, endDate: item.endDate, jobDescription: item.jobDescription, skills: item.skills ?? [], iconSide: item.iconSide ?? "right", order: item.order ?? 0 }); setSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                  {confirmDelete === item.id ? (<><button type="button" onClick={() => deleteAbout(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button><button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button></>) : (<button type="button" onClick={() => setConfirmDelete(item.id)} className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">Hapus</button>)}
+                </div>
+              </li>
+            ))}
+            <button type="button" onClick={() => { setEditing((e) => ({ ...e, about: "new-organization" })); setForm({ name: "organization", title: "Organization", position: "", organization: "", location: "", startDate: "", endDate: "", jobDescription: "", skills: [], iconSide: "right", order: aboutMe.length }); setSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">+ Tambah Organization</button>
           </section>
         )}
 

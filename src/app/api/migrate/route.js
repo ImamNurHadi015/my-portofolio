@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { verifyAdminCookie } from "@/lib/admin-auth";
 
-/** Seed data sama persis seperti data awal di page.js (sebelum pindah ke API). */
+/** About Me: migrasi sesuai tampilan sebelumnya (gambar) – profile, education tanpa tahun wajib, experience/organization dengan format yang sama. */
 const DEFAULT_ABOUT_ME = [
   {
     name: "profile",
@@ -14,23 +14,65 @@ const DEFAULT_ABOUT_ME = [
   {
     name: "education",
     title: "Education",
-    description: "Institut Teknologi Sepuluh Nopember (ITS)\nBachelor of Information Technology\nGPA: 3.60\n\nMAN 2 Kota Kediri (Senior High School)\nFinal Average Score: 87.47",
+    institution: "Institut Teknologi Sepuluh Nopember (ITS)",
+    field: "Bachelor of Information Technology",
+    startYear: "",
+    endYear: "",
+    score: "GPA: 3.60",
+    skills: [],
     iconSide: "right",
     order: 1,
   },
   {
+    name: "education",
+    title: "Education",
+    institution: "MAN 2 Kota Kediri",
+    field: "Senior High School",
+    startYear: "",
+    endYear: "",
+    score: "Final Average Score: 87.47",
+    skills: [],
+    iconSide: "right",
+    order: 2,
+  },
+  {
     name: "experience",
     title: "Experience",
-    description: "Web Development Intern – PT. Suryasoft Konsultama\nFebruary 2025 – May 2025\n\nWorked as a Web Development Intern, collaborating with senior developers to build web applications using Laravel (PHP).\n\nResponsibilities included implementing user interfaces based on Figma designs, developing functional features, applying business logic, and integrating databases. This experience enhanced my understanding of web development workflows, teamwork, and best practices in building maintainable applications.\n\nLaravel · Web Development · Figma (Software) · Teamwork · GitHub",
+    company: "PT. Suryasoft Konsultama",
+    industry: "Web Development Intern",
+    startDate: "February 2025",
+    endDate: "May 2025",
+    roleDescription: "Full-Stack Developer | Hybrid",
+    jobDescription: "Worked as a Web Development Intern, collaborating with senior developers to build web applications using Laravel (PHP).\n\nResponsibilities included implementing user interfaces based on Figma designs, developing functional features, applying business logic, and integrating databases. This experience enhanced my understanding of web development workflows, teamwork, and best practices in building maintainable applications.",
+    skills: ["Laravel", "Php", "Figma (Software)", "Teamwork", "PostgreSQL"],
     iconSide: "left",
-    order: 2,
+    order: 3,
   },
   {
     name: "organization",
     title: "Organization",
-    description: "External Relations Staff\nHimpunan Mahasiswa Teknologi Informasi ITS (HMIT ITS)\nFebruari 2024 – Februari 2025 (1 tahun 1 bulan) · Surabaya, Jawa Timur\n• Memulai dan mengoordinasikan kunjungan perusahaan ke Telkom untuk memperkenalkan mahasiswa ke lingkungan industri profesional.\n• Merencanakan dan melaksanakan 2 kegiatan bakti sosial sebagai bagian dari keterlibatan komunitas organisasi.\n• Mengorganisir 2 seminar yang berfokus pada pengembangan akademik dan karir.\n• Memulai dan melakukan 2 kegiatan benchmarking antar-asosiasi untuk berbagi praktik terbaik dan memperluas jaringan organisasi.\nTeamwork · Public Relations\n\nTraining Speaker / Facilitator – PP LKMM FTEIC 2023/2024\nBEM FTEIC ITS\nJanuari 2023 – Januari 2024 (1 tahun 1 bulan) · Surabaya, Jawa Timur · On-site\n• Berperan sebagai pembicara dan fasilitator dalam program pelatihan PP LKMM FTEIC 2023/2024 dengan menyampaikan dan menjelaskan materi pelatihan, memandu diskusi, dan membantu peserta memahami konsep yang disajikan.\n• Peran ini meningkatkan keterampilan berbicara di depan umum (public speaking), komunikasi, dan kepemimpinan.\nPublic Speaking · Leadership",
+    position: "External Relations Staff",
+    organization: "Himpunan Mahasiswa Teknologi Informasi ITS (HMIT ITS)",
+    location: "Surabaya, Jawa Timur",
+    startDate: "Februari 2024",
+    endDate: "Februari 2025",
+    jobDescription: "• Memulai dan mengoordinasikan kunjungan perusahaan ke Telkom untuk memperkenalkan mahasiswa ke lingkungan industri profesional.\n• Merencanakan dan melaksanakan 2 kegiatan bakti sosial sebagai bagian dari keterlibatan komunitas organisasi.\n• Mengorganisir 2 seminar yang berfokus pada pengembangan akademik dan karir.\n• Memulai dan melakukan 2 kegiatan benchmarking antar-asosiasi untuk berbagi praktik terbaik dan memperluas jaringan organisasi.",
+    skills: ["Teamwork", "Public Relations"],
     iconSide: "right",
-    order: 3,
+    order: 4,
+  },
+  {
+    name: "organization",
+    title: "Organization",
+    position: "Training Speaker / Facilitator – PP LKMM FTEIC 2023/2024",
+    organization: "BEM FTEIC ITS",
+    location: "Surabaya, Jawa Timur · On-site",
+    startDate: "Januari 2023",
+    endDate: "Januari 2024",
+    jobDescription: "• Berperan sebagai pembicara dan fasilitator dalam program pelatihan PP LKMM FTEIC 2023/2024 dengan menyampaikan dan menjelaskan materi pelatihan, memandu diskusi, dan membantu peserta memahami konsep yang disajikan.\n• Peran ini meningkatkan keterampilan berbicara di depan umum (public speaking), komunikasi, dan kepemimpinan.",
+    skills: ["Public Speaking", "Leadership"],
+    iconSide: "right",
+    order: 5,
   },
 ];
 
@@ -118,10 +160,10 @@ export async function POST(request) {
 
     const inserted = { about_me: 0, skills: 0, portfolio_items: 0, social_links: 0 };
 
-    if (aboutCount === 0) {
-      const result = await aboutCol.insertMany(DEFAULT_ABOUT_ME);
-      inserted.about_me = result.insertedCount;
-    }
+    // About Me: selalu reset lalu seed penuh agar profile + education + experience + organization semua ter-input
+    await aboutCol.deleteMany({});
+    const aboutResult = await aboutCol.insertMany(DEFAULT_ABOUT_ME);
+    inserted.about_me = aboutResult.insertedCount;
     if (skillsCount === 0) {
       const result = await skillsCol.insertMany(DEFAULT_SKILLS);
       inserted.skills = result.insertedCount;

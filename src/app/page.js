@@ -390,7 +390,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Me - zig-zag layout, animasi fade/slide saat scroll */}
+      {/* About Me - zig-zag layout, structured (profile / education / experience / organization) */}
       <section
         ref={aboutRef}
         id="about"
@@ -405,18 +405,38 @@ export default function Home() {
             About Me
           </h2>
 
-          <div className="space-y-16 md:space-y-24">
-            {dataLoading ? (
-              <p className="text-gray-500 text-center py-8">Memuat...</p>
-            ) : aboutSections.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Belum ada data.</p>
-            ) : (
-              aboutSections
-                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                .map((sub, i) => (
+          {dataLoading ? (
+            <p className="text-gray-500 text-center py-8">Memuat...</p>
+          ) : aboutSections.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Belum ada data.</p>
+          ) : (() => {
+            const sorted = [...aboutSections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            const profileItems = sorted.filter((s) => s.name === "profile");
+            const educationItems = sorted.filter((s) => s.name === "education");
+            const experienceItems = sorted.filter((s) => s.name === "experience");
+            const organizationItems = sorted.filter((s) => s.name === "organization");
+            const sectionOrder = [
+              { key: "profile", title: "About Me", items: profileItems, icon: "profile" },
+              { key: "education", title: "Education", items: educationItems, icon: "education" },
+              { key: "experience", title: "Experience", items: experienceItems, icon: "experience" },
+              { key: "organization", title: "Organization", items: organizationItems, icon: "organization" },
+            ].filter((s) => s.items.length > 0);
+
+            const skillPill = (skill, idx) => (
+              <span
+                key={idx}
+                className="inline-flex rounded-full bg-[#7bc8ff]/20 text-[#171717] px-3 py-1 text-sm font-medium"
+              >
+                {skill}
+              </span>
+            );
+
+            return (
+              <div className="space-y-16 md:space-y-24">
+                {sectionOrder.map((section, i) => (
                   <div
-                    key={sub.id}
-                    className={`about-zigzag grid gap-8 md:gap-12 md:grid-cols-2 md:items-center ${
+                    key={section.key}
+                    className={`about-zigzag grid gap-8 md:gap-12 md:grid-cols-2 md:items-start ${
                       aboutVisible ? "about-zigzag-visible" : ""
                     }`}
                     style={{
@@ -425,7 +445,7 @@ export default function Home() {
                   >
                     <div
                       className={`flex justify-center order-2 ${
-                        sub.iconSide === "left" ? "md:order-1" : "md:order-2"
+                        section.items[0]?.iconSide === "right" ? "md:order-2" : "md:order-1"
                       }`}
                     >
                       <div
@@ -433,30 +453,114 @@ export default function Home() {
                         aria-hidden
                       >
                         <div className="h-10 w-10 md:h-12 md:w-12">
-                          {ABOUT_ICONS[sub.name] ?? ABOUT_ICONS.profile}
+                          {ABOUT_ICONS[section.icon] ?? ABOUT_ICONS.profile}
                         </div>
                       </div>
                     </div>
                     <div
                       className={`order-1 ${
-                        sub.iconSide === "left" ? "md:order-2" : "md:order-1"
-                      } ${
-                        sub.iconSide === "right"
-                          ? "md:text-right md:flex md:flex-col md:items-end"
-                          : ""
+                        section.items[0]?.iconSide === "right" ? "md:order-1 md:text-right md:flex md:flex-col md:items-end" : ""
                       }`}
                     >
                       <h3 className="text-xl font-bold text-[#171717] md:text-2xl">
-                        {sub.title}
+                        {section.title}
                       </h3>
-                      <div className="mt-3 text-gray-600 leading-relaxed whitespace-pre-line [&>p]:mb-3 [&>p:last-child]:mb-0">
-                        {sub.description}
-                      </div>
+
+                      {/* Profile: single block with title + description */}
+                      {section.key === "profile" && (
+                        <div className="mt-3 text-gray-600 leading-relaxed whitespace-pre-line">
+                          {profileItems[0]?.title && (
+                            <p className="font-semibold text-[#171717] mb-2">{profileItems[0].title}</p>
+                          )}
+                          {profileItems[0]?.description ?? ""}
+                        </div>
+                      )}
+
+                      {/* Education: each entry = bold institution, field, years, score, skills */}
+                      {section.key === "education" && (
+                        <div className="mt-4 space-y-6">
+                          {educationItems.map((entry) => (
+                            <div key={entry.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
+                              <p className="font-bold text-[#171717]">{entry.institution ?? ""}</p>
+                              {(entry.field || entry.startYear || entry.endYear || entry.score) && (
+                                <p className="mt-1 text-gray-600 text-sm">
+                                  {[entry.field, entry.startYear && entry.endYear ? `${entry.startYear} – ${entry.endYear}` : entry.startYear || entry.endYear, entry.score].filter(Boolean).join(" · ")}
+                                </p>
+                              )}
+                              {entry.skills?.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {entry.skills.map(skillPill)}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Experience: bold company + industry, dates, role, job description, skills */}
+                      {section.key === "experience" && (
+                        <div className="mt-4 space-y-6">
+                          {experienceItems.map((entry) => (
+                            <div key={entry.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
+                              <p className="font-bold text-[#171717]">{[entry.company, entry.industry].filter(Boolean).join(" · ")}</p>
+                              {(entry.startDate || entry.endDate) && (
+                                <p className="mt-1 text-gray-500 text-sm">
+                                  {[entry.startDate, entry.endDate].filter(Boolean).join(" – ")}
+                                </p>
+                              )}
+                              {entry.roleDescription && (
+                                <p className="mt-1 text-gray-600 font-medium">{entry.roleDescription}</p>
+                              )}
+                              {entry.jobDescription && (
+                                <div className="mt-2 text-gray-600 leading-relaxed whitespace-pre-line text-sm">
+                                  {entry.jobDescription.split(/\n+/).map((line, idx) => (
+                                    <p key={idx} className="mb-1">{line}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {entry.skills?.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {entry.skills.map(skillPill)}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Organization: bold position + organization, location, dates, job description, skills */}
+                      {section.key === "organization" && (
+                        <div className="mt-4 space-y-6">
+                          {organizationItems.map((entry) => (
+                            <div key={entry.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
+                              <p className="font-bold text-[#171717]">{[entry.position, entry.organization].filter(Boolean).join(" · ")}</p>
+                              {(entry.location || entry.startDate || entry.endDate) && (
+                                <p className="mt-1 text-gray-500 text-sm">
+                                  {[entry.location, entry.startDate && entry.endDate ? `${entry.startDate} – ${entry.endDate}` : entry.startDate || entry.endDate].filter(Boolean).join(" · ")}
+                                </p>
+                              )}
+                              {entry.jobDescription && (
+                                <div className="mt-2 text-gray-600 leading-relaxed whitespace-pre-line text-sm">
+                                  {entry.jobDescription.split(/\n+/).map((line, idx) => (
+                                    <p key={idx} className="mb-1">{line}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {entry.skills?.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {entry.skills.map(skillPill)}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))
-            )}
-          </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
