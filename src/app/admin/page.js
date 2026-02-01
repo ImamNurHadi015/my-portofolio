@@ -13,24 +13,36 @@ export default function AdminPage() {
   const [aboutMe, setAboutMe] = useState([]);
   const [skills, setSkills] = useState([]);
   const [portfolio, setPortfolio] = useState([]);
+  const [socialLinks, setSocialLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [migrateStatus, setMigrateStatus] = useState(null);
   const [activeSection, setActiveSection] = useState("about");
-  const [editing, setEditing] = useState({ about: null, skills: null, portfolio: null });
+  const [editing, setEditing] = useState({ about: null, skills: null, portfolio: null, social: null });
   const [form, setForm] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const socialTypes = [
+    { id: "email", label: "Email" },
+    { id: "github", label: "GitHub 1" },
+    { id: "github2", label: "GitHub 2" },
+    { id: "instagram", label: "Instagram" },
+    { id: "whatsapp", label: "WhatsApp" },
+    { id: "linkedin", label: "LinkedIn" },
+  ];
 
   async function load() {
     setLoading(true);
     try {
-      const [a, s, p] = await Promise.all([
+      const [a, s, p, soc] = await Promise.all([
         fetch(`${API}/about-me`, fetchOpts).then((r) => r.json()),
         fetch(`${API}/skills`, fetchOpts).then((r) => r.json()),
         fetch(`${API}/portfolio`, fetchOpts).then((r) => r.json()),
+        fetch(`${API}/social-links`, fetchOpts).then((r) => r.json()),
       ]);
       if (Array.isArray(a)) setAboutMe(a);
       if (Array.isArray(s)) setSkills(s);
       if (Array.isArray(p)) setPortfolio(p);
+      if (Array.isArray(soc)) setSocialLinks(soc);
     } catch (e) {
       console.error(e);
     } finally {
@@ -126,6 +138,26 @@ export default function AdminPage() {
     }
   }
 
+  async function saveSocial() {
+    const id = editing.social;
+    const isNew = id === "new" || !id;
+    const body = { label: form.label, href: form.href, type: form.type, order: form.order ?? 0 };
+    const res = await fetch(`${API}/social-links`, { method: isNew ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(isNew ? body : { id, ...body }), ...fetchOpts });
+    if (res.ok) {
+      setEditing((e) => ({ ...e, social: null }));
+      setForm({});
+      await load();
+    }
+  }
+
+  async function deleteSocial(id) {
+    const res = await fetch(`${API}/social-links?id=${id}`, { method: "DELETE", ...fetchOpts });
+    if (res.ok) {
+      setConfirmDelete(null);
+      await load();
+    }
+  }
+
   const categories = [
     { id: "mobile", label: "Mobile Apps" },
     { id: "website", label: "Website" },
@@ -164,6 +196,7 @@ export default function AdminPage() {
           { id: "about", label: "About Me" },
           { id: "skills", label: "Skills" },
           { id: "portfolio", label: "Portfolio" },
+          { id: "social", label: "Media Sosial" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -313,6 +346,55 @@ export default function AdminPage() {
                     {confirmDelete === item.id ? (
                       <>
                         <button type="button" onClick={() => deletePortfolio(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>
+                        <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button>
+                      </>
+                    ) : (
+                      <button type="button" onClick={() => setConfirmDelete(item.id)} className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200">Hapus</button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Media Sosial */}
+        {activeSection === "social" && (
+          <section>
+            <h2 className="text-lg font-bold text-[#171717] mb-4">Manage Media Sosial</h2>
+            <p className="text-sm text-gray-600 mb-4">Link yang diklik di halaman utama (hero & footer) akan mengarah ke URL yang diisi di sini.</p>
+            {editing.social !== null ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+                <input placeholder="Label (contoh: GitHub 1)" value={form.label ?? ""} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                <input placeholder="URL (contoh: https://github.com/username)" value={form.href ?? ""} onChange={(e) => setForm((f) => ({ ...f, href: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                <select value={form.type ?? "email"} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-4">
+                  {socialTypes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <button type="button" onClick={saveSocial} className="rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">Simpan</button>
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, social: null })); setForm({}); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => { setEditing((e) => ({ ...e, social: "new" })); setForm({ label: "", href: "", type: "email", order: socialLinks.length }); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
+                + Tambah Media Sosial
+              </button>
+            )}
+            <ul className="space-y-3">
+              {socialLinks.map((item) => (
+                <li key={item.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-[#171717]">{item.label}</p>
+                    <p className="text-sm text-gray-500 truncate max-w-md">{item.href}</p>
+                    <p className="text-xs text-gray-400">{socialTypes.find((t) => t.id === item.type)?.label ?? item.type}</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, social: item.id })); setForm({ label: item.label, href: item.href, type: item.type ?? "email", order: item.order ?? 0 }); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                    {confirmDelete === item.id ? (
+                      <>
+                        <button type="button" onClick={() => deleteSocial(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>
                         <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm">Batal</button>
                       </>
                     ) : (

@@ -85,6 +85,15 @@ const DEFAULT_PORTFOLIO = [
   { title: "Public Speaking 3", category: "public-speaking", image: "/portofolio/public_speaking/public-speaking-3.jpeg", description: "" },
 ];
 
+const DEFAULT_SOCIAL_LINKS = [
+  { label: "Email", href: "mailto:imam@example.com", type: "email", order: 0 },
+  { label: "GitHub 1", href: "https://github.com", type: "github", order: 1 },
+  { label: "GitHub 2", href: "https://github.com", type: "github2", order: 2 },
+  { label: "Instagram", href: "https://instagram.com", type: "instagram", order: 3 },
+  { label: "WhatsApp", href: "https://wa.me/6281234567890", type: "whatsapp", order: 4 },
+  { label: "LinkedIn", href: "https://linkedin.com", type: "linkedin", order: 5 },
+];
+
 export async function POST(request) {
   const cookie = request.headers.get("cookie");
   if (!verifyAdminCookie(cookie)) {
@@ -98,14 +107,16 @@ export async function POST(request) {
     const aboutCol = db.collection("about_me");
     const skillsCol = db.collection("skills");
     const portfolioCol = db.collection("portfolio_items");
+    const socialCol = db.collection("social_links");
 
-    const [aboutCount, skillsCount, portfolioCount] = await Promise.all([
+    const [aboutCount, skillsCount, portfolioCount, socialCount] = await Promise.all([
       aboutCol.countDocuments(),
       skillsCol.countDocuments(),
       portfolioCol.countDocuments(),
+      socialCol.countDocuments(),
     ]);
 
-    const inserted = { about_me: 0, skills: 0, portfolio_items: 0 };
+    const inserted = { about_me: 0, skills: 0, portfolio_items: 0, social_links: 0 };
 
     if (aboutCount === 0) {
       const result = await aboutCol.insertMany(DEFAULT_ABOUT_ME);
@@ -123,6 +134,10 @@ export async function POST(request) {
       }));
       const result = await portfolioCol.insertMany(docs);
       inserted.portfolio_items = result.insertedCount;
+    }
+    if (socialCount === 0) {
+      const result = await socialCol.insertMany(DEFAULT_SOCIAL_LINKS);
+      inserted.social_links = result.insertedCount;
     }
 
     return NextResponse.json({ ok: true, inserted });
