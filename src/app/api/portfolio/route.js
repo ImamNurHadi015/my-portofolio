@@ -15,21 +15,48 @@ function validCategory(cat) {
   return CATEGORIES.includes(cat);
 }
 
+function normalizeCategories(val) {
+  if (Array.isArray(val)) {
+    return [...new Set(val.map((c) => String(c).trim()).filter(validCategory))];
+  }
+  if (val != null && val !== "") {
+    const c = String(val).trim();
+    if (validCategory(c)) return [c];
+  }
+  return [];
+}
+
+function normalizeImages(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((item) => {
+    if (typeof item === "string") return { name: "", url: item };
+    return { name: String(item.name ?? "").trim(), url: String(item.url ?? "").trim() };
+  }).filter((item) => item.url);
+}
+
+function toPublicPortfolio(doc) {
+  const images = Array.isArray(doc.images) && doc.images.length > 0
+    ? doc.images
+    : (doc.image ? [{ name: doc.title ?? "", url: doc.image }] : []);
+  const categories = Array.isArray(doc.categories) && doc.categories.length > 0
+    ? doc.categories
+    : (doc.category ? [doc.category] : ["mobile"]);
+  return {
+    id: doc._id.toString(),
+    title: doc.title ?? "",
+    categories,
+    description: doc.description ?? "",
+    images,
+    createdAt: doc.createdAt?.toISOString?.() ?? null,
+  };
+}
+
 export async function GET() {
   try {
     const db = await getDb();
     if (!db) return NextResponse.json([]);
     const list = await db.collection(COLLECTION).find({}).sort({ createdAt: -1 }).toArray();
-    const data = list.map((doc) => ({
-      id: doc._id.toString(),
-      title: doc.title,
-      category: doc.category,
-      image: doc.image,
-      description: doc.description ?? "",
-      createdAt: doc.createdAt?.toISOString?.() ?? null,
-      filename: doc.filename ?? doc.image,
-    }));
-    return NextResponse.json(data);
+    return NextResponse.json(list.map(toPublicPortfolio));
   } catch (err) {
     console.error("portfolio GET", err);
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
@@ -42,22 +69,23 @@ export async function POST(request) {
   }
   try {
     const body = await request.json();
-    const { title, category, image, description } = body;
-    if (!title || !validCategory(category) || !image) {
-      return NextResponse.json({ error: "Missing or invalid title, category, image" }, { status: 400 });
+    const { title, category, categories, image, images, description } = body;
+    const imgs = normalizeImages(Array.isArray(images) && images.length > 0 ? images : (image ? [{ name: "", url: image }] : []));
+    const cats = normalizeCategories(categories ?? category);
+    if (!title || cats.length === 0 || imgs.length === 0) {
+      return NextResponse.json({ error: "Missing or invalid title, minimal satu kategori, atau minimal satu gambar" }, { status: 400 });
     }
     const db = await getDb();
     if (!db) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     const doc = {
       title: String(title),
-      category: String(category),
-      image: String(image),
+      categories: cats,
       description: description != null ? String(description) : "",
-      filename: String(image).split("/").pop() || image,
+      images: imgs,
       createdAt: new Date(),
     };
     const result = await db.collection(COLLECTION).insertOne(doc);
-    return NextResponse.json({ id: result.insertedId.toString(), ...doc });
+    return NextResponse.json({ id: result.insertedId.toString(), ...toPublicPortfolio({ _id: result.insertedId, ...doc }) });
   } catch (err) {
     console.error("portfolio POST", err);
     return NextResponse.json({ error: "Failed to create" }, { status: 500 });
@@ -70,25 +98,25 @@ export async function PUT(request) {
   }
   try {
     const body = await request.json();
-    const { id, title, category, image, description } = body;
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const id = body.id;
+    if (!id || typeof id !== "string") return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const hex24 = /^[a-f0-9]{24}$/i.test(id);
+    if (!hex24) return NextResponse.json({ error: "Invalid id (must be 24-character hex)" }, { status: 400 });
     const db = await getDb();
     if (!db) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     const update = {};
-    if (title !== undefined) update.title = String(title);
-    if (category !== undefined && validCategory(category)) update.category = category;
-    if (image !== undefined) {
-      update.image = String(image);
-      update.filename = String(image).split("/").pop() || image;
-    }
-    if (description !== undefined) update.description = String(description);
+    if (body.title !== undefined) update.title = String(body.title);
+    if (body.categories !== undefined) update.categories = normalizeCategories(body.categories);
+    else if (body.category !== undefined) update.categories = normalizeCategories(body.category);
+    if (body.description !== undefined) update.description = String(body.description);
+    if (body.images !== undefined) update.images = normalizeImages(body.images);
+    else if (body.image !== undefined) update.images = normalizeImages([{ name: "", url: body.image }]);
+    if (Object.keys(update).length === 0) return NextResponse.json({ ok: true });
     const result = await db.collection(COLLECTION).updateOne(
       { _id: new ObjectId(id) },
       { $set: update }
     );
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    if (result.matchedCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("portfolio PUT", err);

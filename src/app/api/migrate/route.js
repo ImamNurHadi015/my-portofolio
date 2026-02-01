@@ -137,15 +137,15 @@ const DEFAULT_SKILLS = [
 ];
 
 const DEFAULT_PORTFOLIO = [
-  { title: "Mobile 1", category: "mobile", image: "/portofolio/mobile-1.png", description: "" },
-  { title: "Mobile 2", category: "mobile", image: "/portofolio/mobile-2.png", description: "" },
-  { title: "Website 1", category: "website", image: "/portofolio/website-1.png", description: "" },
-  { title: "Website 2", category: "website", image: "/portofolio/website-2.png", description: "" },
-  { title: "AI 1", category: "ai", image: "/portofolio/ai-1.png", description: "" },
-  { title: "AI 2", category: "ai", image: "/portofolio/ai-2.png", description: "" },
-  { title: "Public Speaking 1", category: "public-speaking", image: "/portofolio/public_speaking/public-speaking-1.jpeg", description: "" },
-  { title: "Public Speaking 2", category: "public-speaking", image: "/portofolio/public_speaking/public-speaking-2.jpeg", description: "" },
-  { title: "Public Speaking 3", category: "public-speaking", image: "/portofolio/public_speaking/public-speaking-3.jpeg", description: "" },
+  { title: "Mobile 1", categories: ["mobile"], images: [{ name: "Mobile 1", url: "/portofolio/mobile-1.png" }], description: "", createdAt: new Date() },
+  { title: "Mobile 2", categories: ["mobile"], images: [{ name: "Mobile 2", url: "/portofolio/mobile-2.png" }], description: "", createdAt: new Date() },
+  { title: "Website 1", categories: ["website"], images: [{ name: "Website 1", url: "/portofolio/website-1.png" }], description: "", createdAt: new Date() },
+  { title: "Website 2", categories: ["website"], images: [{ name: "Website 2", url: "/portofolio/website-2.png" }], description: "", createdAt: new Date() },
+  { title: "AI 1", categories: ["ai"], images: [{ name: "AI 1", url: "/portofolio/ai-1.png" }], description: "", createdAt: new Date() },
+  { title: "AI 2", categories: ["ai"], images: [{ name: "AI 2", url: "/portofolio/ai-2.png" }], description: "", createdAt: new Date() },
+  { title: "Public Speaking 1", categories: ["public-speaking"], images: [{ name: "Public Speaking 1", url: "/portofolio/public_speaking/public-speaking-1.jpeg" }], description: "", createdAt: new Date() },
+  { title: "Public Speaking 2", categories: ["public-speaking"], images: [{ name: "Public Speaking 2", url: "/portofolio/public_speaking/public-speaking-2.jpeg" }], description: "", createdAt: new Date() },
+  { title: "Public Speaking 3", categories: ["public-speaking"], images: [{ name: "Public Speaking 3", url: "/portofolio/public_speaking/public-speaking-3.jpeg" }], description: "", createdAt: new Date() },
 ];
 
 const DEFAULT_SOCIAL_LINKS = [
@@ -189,15 +189,10 @@ export async function POST(request) {
     await skillsCol.deleteMany({});
     const skillsResult = await skillsCol.insertMany(DEFAULT_SKILLS);
     inserted.skills = skillsResult.insertedCount;
-    if (portfolioCount === 0) {
-      const docs = DEFAULT_PORTFOLIO.map((d) => ({
-        ...d,
-        filename: d.image.split("/").pop(),
-        createdAt: new Date(),
-      }));
-      const result = await portfolioCol.insertMany(docs);
-      inserted.portfolio_items = result.insertedCount;
-    }
+    // Portfolio: reset lalu seed penuh agar gambar dari DB (images array)
+    await portfolioCol.deleteMany({});
+    const portfolioResult = await portfolioCol.insertMany(DEFAULT_PORTFOLIO);
+    inserted.portfolio_items = portfolioResult.insertedCount;
     if (socialCount === 0) {
       const result = await socialCol.insertMany(DEFAULT_SOCIAL_LINKS);
       inserted.social_links = result.insertedCount;

@@ -163,10 +163,30 @@ export default function AdminPage() {
     }
   }
 
+  function addPortfolioImage(file, imageName) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((f) => ({
+        ...f,
+        images: [...(f.images ?? []), { name: imageName || file.name || "", url: reader.result }],
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function savePortfolio() {
     const id = editing.portfolio;
-    const body = { title: form.title, category: form.category, image: form.image, description: form.description ?? "" };
-    const res = await fetch(`${API}/portfolio`, { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(id ? { id, ...body } : body), ...fetchOpts });
+    const isNew = !id || id === "new";
+    const categories = Array.isArray(form.categories) ? form.categories : (form.category ? [form.category] : []);
+    if (categories.length === 0) return;
+    const body = {
+      title: form.title,
+      categories,
+      description: form.description ?? "",
+      images: (form.images ?? []).length ? form.images : (form.image ? [{ name: "", url: form.image }] : []),
+    };
+    const res = await fetch(`${API}/portfolio`, { method: isNew ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(isNew ? body : { id, ...body }), ...fetchOpts });
     if (res.ok) {
       setEditing((e) => ({ ...e, portfolio: null }));
       setForm({});
@@ -492,35 +512,78 @@ export default function AdminPage() {
           <section>
             <h2 className="text-lg font-bold text-[#171717] mb-4">Manage Portfolio</h2>
             {editing.portfolio !== null ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4 max-h-[85vh] overflow-y-auto">
                 <input placeholder="Title" value={form.title ?? ""} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
-                <select value={form.category ?? "mobile"} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2">
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </select>
-                <input placeholder="Image URL (e.g. /portofolio/...)" value={form.image ?? ""} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
+                <div className="mb-2">
+                  <p className="text-sm font-medium text-[#171717] mb-2">Kategori (centang semua yang berlaku)</p>
+                  <div className="flex flex-wrap gap-3">
+                    {categories.map((c) => {
+                      const selected = Array.isArray(form.categories) ? form.categories.includes(c.id) : (form.category === c.id || (!form.categories && c.id === "mobile"));
+                      return (
+                        <label key={c.id} className="inline-flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!selected}
+                            onChange={(e) => {
+                              setForm((f) => {
+                                const current = Array.isArray(f.categories) ? [...f.categories] : (f.category ? [f.category] : ["mobile"]);
+                                let next;
+                                if (e.target.checked) {
+                                  next = current.includes(c.id) ? current : [...current, c.id];
+                                } else {
+                                  next = current.filter((x) => x !== c.id);
+                                  if (next.length === 0) return f;
+                                }
+                                return { ...f, categories: next };
+                              });
+                            }}
+                            className="rounded border-gray-300 text-[#7bc8ff] focus:ring-[#7bc8ff]"
+                          />
+                          <span className="text-sm text-gray-700">{c.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
                 <textarea placeholder="Description" value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-4" />
+                <h3 className="text-sm font-semibold text-[#171717] mb-2 border-b border-gray-200 pb-1">Gambar Portfolio</h3>
+                <p className="text-xs text-gray-500 mb-2">Nama gambar + unggah file. Minimal satu gambar.</p>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <input type="text" placeholder="Nama gambar" id="portfolio-image-name" className="flex-1 min-w-[120px] rounded-lg border border-gray-300 px-3 py-2" />
+                  <label className="inline-flex items-center rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-[#5fb8f5]">
+                    Pilih file
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) { const name = document.getElementById("portfolio-image-name")?.value?.trim() || f.name; addPortfolioImage(f, name); e.target.value = ""; } }} />
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                  {(form.images ?? []).map((img, i) => (
+                    <div key={i} className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
+                      <img src={img.url} alt={img.name || ""} className="w-full aspect-[4/3] object-cover" />
+                      <p className="p-2 text-xs text-gray-600 truncate">{img.name || "Gambar"}</p>
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, images: (f.images ?? []).filter((_, j) => j !== i) }))} className="absolute top-1 right-1 rounded-full bg-red-500 text-white w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600" aria-label="Hapus">×</button>
+                    </div>
+                  ))}
+                </div>
                 <div className="flex gap-2">
                   <button type="button" onClick={savePortfolio} className="rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">Simpan</button>
                   <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: null })); setForm({}); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: "new" })); setForm({ title: "", category: "mobile", image: "", description: "" }); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
+              <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: "new" })); setForm({ title: "", categories: ["mobile"], description: "", images: [] }); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
                 + Tambah Portfolio
               </button>
             )}
             <ul className="space-y-3">
               {portfolio.map((item) => (
-                <li key={item.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-start justify-between gap-4">
-                  <div>
+                <li key={item.id} className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold text-[#171717]">{item.title}</p>
-                    <p className="text-sm text-gray-500">{categories.find((c) => c.id === item.category)?.label ?? item.category}</p>
-                    <p className="text-sm text-gray-500 truncate max-w-xs">{item.image}</p>
+                    <p className="text-sm text-gray-500">{(item.categories ?? (item.category ? [item.category] : [])).map((cid) => categories.find((c) => c.id === cid)?.label ?? cid).join(", ")}</p>
+                    <p className="text-sm text-gray-500 truncate">{(item.images ?? []).length} gambar</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: item.id })); setForm({ title: item.title, category: item.category, image: item.image ?? "", description: item.description ?? "" }); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: item.id })); setForm({ title: item.title, categories: item.categories ?? (item.category ? [item.category] : ["mobile"]), description: item.description ?? "", images: item.images ?? [] }); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
                     {confirmDelete === item.id ? (
                       <>
                         <button type="button" onClick={() => deletePortfolio(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>

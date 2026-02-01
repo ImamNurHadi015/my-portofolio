@@ -117,9 +117,11 @@ export default function Home() {
   const [hasRevealed, setHasRevealed] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedSkillId, setSelectedSkillId] = useState(null);
+  const [skillCertIndex, setSkillCertIndex] = useState(0);
   const [skillModalImage, setSkillModalImage] = useState(null);
   const [portfolioFilter, setPortfolioFilter] = useState("all");
-  const [portfolioModalImage, setPortfolioModalImage] = useState(null);
+  const [portfolioModalItem, setPortfolioModalItem] = useState(null);
+  const [portfolioModalImageIndex, setPortfolioModalImageIndex] = useState(0);
   const adminClickCountRef = useRef(0);
   const adminClickTimeoutRef = useRef(null);
 
@@ -152,12 +154,19 @@ export default function Home() {
         setSkillsData(Array.isArray(skills) ? skills : []);
         setPortfolioItems(
           Array.isArray(portfolio)
-            ? portfolio.map((p) => ({
-                id: p.id,
-                filename: p.filename || p.title,
-                categoryId: p.category,
-                src: p.image,
-              }))
+            ? portfolio.map((p) => {
+                const images = p.images ?? (p.image ? [{ name: p.title ?? "", url: p.image }] : []);
+                const src = images[0]?.url ?? p.image ?? "";
+                const categoryIds = Array.isArray(p.categories) && p.categories.length > 0 ? p.categories : (p.category ? [p.category] : []);
+                return {
+                  id: p.id,
+                  title: p.title,
+                  filename: p.title,
+                  categoryIds,
+                  images,
+                  src,
+                };
+              })
             : []
         );
         setSocialLinksFromApi(Array.isArray(social) ? social.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []);
@@ -587,11 +596,11 @@ export default function Home() {
               <button
                 key={skill.id}
                 type="button"
-                onClick={() =>
-                  setSelectedSkillId((prev) =>
-                    prev === skill.id ? null : skill.id
-                  )
-                }
+                onClick={() => {
+                  const next = selectedSkillId === skill.id ? null : skill.id;
+                  setSelectedSkillId(next);
+                  if (next) setSkillCertIndex(0);
+                }}
                 className={`skills-card group flex flex-col items-center gap-3 rounded-2xl border-2 px-6 py-8 text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 ${
                   selectedSkillId === skill.id
                     ? "border-[#7bc8ff] bg-[#7bc8ff]/10 shadow-lg"
@@ -668,44 +677,84 @@ export default function Home() {
                         </ul>
                       </div>
                     )}
-                    {images.length > 0 && (
-                      <div>
-                        <h4 className="mb-3 font-semibold text-[#171717]">
-                          Sertifikat / Bukti
-                        </h4>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
-                          {images.map((img, i) => {
-                            const src = typeof img === "string" ? img : img?.url;
-                            const alt = typeof img === "object" && img?.name ? img.name : "";
-                            if (!src) return null;
-                            return (
+                    {images.length > 0 && (() => {
+                      const PER_PAGE = 2;
+                      const start = Math.min(skillCertIndex, Math.max(0, images.length - PER_PAGE));
+                      const pageImages = images.slice(start, start + PER_PAGE);
+                      const totalPages = Math.ceil(images.length / PER_PAGE);
+                      const currentPage = Math.floor(start / PER_PAGE) + 1;
+                      const hasPrev = start > 0;
+                      const hasNext = start + PER_PAGE < images.length;
+                      return (
+                        <div>
+                          <h4 className="mb-3 font-semibold text-[#171717]">
+                            Sertifikat / Bukti
+                          </h4>
+                          <div className="relative flex items-stretch gap-2">
+                            {images.length > PER_PAGE && (
                               <button
-                                key={`${skill.id}-img-${i}`}
                                 type="button"
-                                onClick={() => setSkillModalImage(src)}
-                                className="relative w-full overflow-hidden rounded-xl bg-gray-100 text-left focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2"
+                                onClick={() => setSkillCertIndex((i) => Math.max(0, i - PER_PAGE))}
+                                disabled={!hasPrev}
+                                className="shrink-0 flex h-10 w-10 self-center items-center justify-center rounded-full bg-[#7bc8ff] text-white transition hover:bg-[#5fb8f5] disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2"
+                                aria-label="Halaman sebelumnya"
                               >
-                                <img
-                                  src={src}
-                                  alt={alt || "Sertifikat"}
-                                  className="block w-full aspect-square object-cover"
-                                  onError={(e) => {
-                                    e.target.style.display = "none";
-                                    const wrap = e.target.closest("button");
-                                    const fallback = wrap?.querySelector(".skill-cert-fallback");
-                                    if (fallback) fallback.classList.remove("hidden");
-                                  }}
-                                />
-                                <span className="skill-cert-fallback absolute inset-0 hidden min-h-[120px] flex items-center justify-center bg-gray-100 text-sm text-gray-400 rounded-xl" aria-hidden>
-                                  Gambar tidak tersedia
-                                </span>
-                                {alt && <p className="p-2 text-xs text-gray-600 truncate">{alt}</p>}
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                               </button>
-                            );
-                          })}
+                            )}
+                            <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {pageImages.map((img, i) => {
+                                const src = typeof img === "string" ? img : img?.url;
+                                const alt = typeof img === "object" && img?.name ? img.name : "";
+                                if (!src) return null;
+                                return (
+                                  <div key={`${start + i}`} className="flex justify-center">
+                                    <div className="bg-gray-50 rounded-xl overflow-hidden w-fit max-w-full">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSkillModalImage(src)}
+                                        className="block focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-inset rounded-xl"
+                                      >
+                                        <img
+                                          src={src}
+                                          alt={alt || "Sertifikat"}
+                                          className="block h-auto max-h-[36vh] w-auto object-contain"
+                                          onError={(e) => {
+                                            e.target.style.display = "none";
+                                            const wrap = e.target.closest("button");
+                                            const fallback = wrap?.querySelector(".skill-cert-fallback");
+                                            if (fallback) fallback.classList.remove("hidden");
+                                          }}
+                                        />
+                                        <span className="skill-cert-fallback hidden min-h-[80px] flex items-center justify-center bg-gray-100 text-sm text-gray-400 rounded-xl" aria-hidden>
+                                          Gambar tidak tersedia
+                                        </span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {images.length > PER_PAGE && (
+                              <button
+                                type="button"
+                                onClick={() => setSkillCertIndex((i) => Math.min(images.length - PER_PAGE, i + PER_PAGE))}
+                                disabled={!hasNext}
+                                className="shrink-0 flex h-10 w-10 self-center items-center justify-center rounded-full bg-[#7bc8ff] text-white transition hover:bg-[#5fb8f5] disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2"
+                                aria-label="Halaman berikutnya"
+                              >
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                              </button>
+                            )}
+                          </div>
+                          {images.length > PER_PAGE && (
+                            <p className="mt-2 text-center text-sm text-gray-500">
+                              Halaman {currentPage} / {totalPages}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               );
@@ -757,39 +806,37 @@ export default function Home() {
           ) : portfolioItems.length === 0 ? (
             <p className="text-gray-500 py-8">Belum ada data.</p>
           ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {(portfolioFilter === "all"
               ? portfolioItems
-              : portfolioItems.filter((i) => i.categoryId === portfolioFilter)
+              : portfolioItems.filter((i) => (i.categoryIds ?? []).includes(portfolioFilter))
             ).map((item) => (
               <button
                 key={item.id ?? item.filename}
                 type="button"
-                onClick={() =>
-                  setPortfolioModalImage(item.src)
-                }
-                className="portfolio-item group relative overflow-hidden rounded-xl bg-gray-100 text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2"
+                onClick={() => { setPortfolioModalItem(item); setPortfolioModalImageIndex(0); }}
+                className="portfolio-item group relative overflow-hidden rounded-xl bg-gray-100 text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 w-full"
               >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                  <Image
-                    src={item.src}
-                    alt=""
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    onError={(e) => {
-                      const wrap = e.target.closest(".relative");
-                      if (e.target.parentElement) e.target.parentElement.style.display = "none";
-                      const fallback = wrap?.querySelector(".portfolio-item-fallback");
-                      if (fallback) fallback.classList.remove("hidden");
-                    }}
-                  />
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl w-full">
+                  {item.src ? (
+                    <img
+                      src={item.src}
+                      alt={item.title ?? ""}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        const wrap = e.target.closest(".relative");
+                        const fallback = wrap?.querySelector(".portfolio-item-fallback");
+                        if (fallback) fallback.classList.remove("hidden");
+                      }}
+                    />
+                  ) : null}
                   <span className="portfolio-item-fallback absolute inset-0 hidden flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl" aria-hidden>
                     Gambar tidak tersedia
                   </span>
                 </div>
-                <p className="mt-3 text-sm font-medium text-[#171717]">
-                  {portfolioCategoryLabels[item.categoryId]}
+                <p className="mt-3 text-sm font-medium text-[#171717] truncate">
+                  {(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}
                 </p>
               </button>
             ))}
@@ -797,43 +844,79 @@ export default function Home() {
           )}
         </div>
 
-        {/* Modal preview */}
-        {portfolioModalImage && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-            onClick={() => setPortfolioModalImage(null)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setPortfolioModalImage(null);
-            }}
-            aria-label="Tutup preview"
-          >
+        {/* Modal preview portfolio: satu item bisa banyak gambar (carousel) */}
+        {portfolioModalItem && (() => {
+          const images = portfolioModalItem.images ?? (portfolioModalItem.src ? [{ url: portfolioModalItem.src }] : []);
+          const idx = Math.min(portfolioModalImageIndex, Math.max(0, images.length - 1));
+          const current = images[idx];
+          const src = current?.url ?? portfolioModalItem.src;
+          const hasPrev = idx > 0;
+          const hasNext = idx < images.length - 1;
+          const close = () => { setPortfolioModalItem(null); setPortfolioModalImageIndex(0); };
+          return (
             <div
-              className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-              role="presentation"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+              onClick={close}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") close();
+                if (e.key === "ArrowLeft" && hasPrev) setPortfolioModalImageIndex((i) => i - 1);
+                if (e.key === "ArrowRight" && hasNext) setPortfolioModalImageIndex((i) => i + 1);
+              }}
+              aria-label="Tutup preview"
             >
-              <Image
-                src={portfolioModalImage}
-                alt="Preview"
-                width={800}
-                height={600}
-                className="max-h-[90vh] w-auto object-contain"
-              />
-              <button
-                type="button"
-                onClick={() => setPortfolioModalImage(null)}
-                className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-gray-700 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
-                aria-label="Tutup"
+              <div
+                className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+                role="presentation"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                {images.length > 1 && hasPrev && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setPortfolioModalImageIndex((i) => i - 1); }}
+                    className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 text-gray-700 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
+                    aria-label="Gambar sebelumnya"
+                  >
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                )}
+                {src && (
+                  <img
+                    src={src}
+                    alt={current?.name || portfolioModalItem.title || "Preview"}
+                    className="max-h-[90vh] w-auto object-contain"
+                  />
+                )}
+                {images.length > 1 && hasNext && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setPortfolioModalImageIndex((i) => i + 1); }}
+                    className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 text-gray-700 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
+                    aria-label="Gambar berikutnya"
+                  >
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                )}
+                {images.length > 1 && (
+                  <p className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-sm text-white">
+                    {idx + 1} / {images.length}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={close}
+                  className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-gray-700 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
+                  aria-label="Tutup"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </section>
 
       {/* Skill detail – modal preview gambar sertifikat */}
