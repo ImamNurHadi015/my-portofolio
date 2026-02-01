@@ -20,6 +20,8 @@ export default function AdminPage() {
   const [editing, setEditing] = useState({ about: null, skills: null, portfolio: null, social: null });
   const [form, setForm] = useState({});
   const [skillInput, setSkillInput] = useState("");
+  const [projectNameInput, setProjectNameInput] = useState("");
+  const [projectDurationInput, setProjectDurationInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const socialTypes = [
@@ -107,13 +109,50 @@ export default function AdminPage() {
 
   async function saveSkill() {
     const id = editing.skills;
-    const body = { title: form.title, description: form.description, category: form.category, icon: form.icon, projects: form.projects ?? [], certifications: form.certifications ?? [], order: form.order };
+    const body = {
+      title: form.title,
+      description: form.description,
+      category: form.category,
+      icon: form.icon,
+      duration: form.duration ?? "",
+      relatedProjects: (form.relatedProjects ?? form.projects ?? []).map((p) => typeof p === "object" && p && "name" in p ? p : { name: String(p), duration: "" }),
+      images: form.images ?? [],
+      order: form.order,
+    };
     const res = await fetch(`${API}/skills`, { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(id ? { id, ...body } : body), ...fetchOpts });
     if (res.ok) {
       setEditing((e) => ({ ...e, skills: null }));
       setForm({});
+      setProjectNameInput("");
+      setProjectDurationInput("");
       await load();
     }
+  }
+
+  function normalizedRelatedProjects(f) {
+    const raw = f.relatedProjects ?? f.projects ?? [];
+    return raw.map((p) => typeof p === "object" && p && "name" in p ? p : { name: String(p), duration: "" });
+  }
+
+  function addSkillProject() {
+    const name = projectNameInput.trim();
+    if (!name) return;
+    const duration = projectDurationInput.trim();
+    setForm((f) => ({ ...f, relatedProjects: [...normalizedRelatedProjects(f), { name, duration }] }));
+    setProjectNameInput("");
+    setProjectDurationInput("");
+  }
+
+  function addSkillImage(file, imageName) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((f) => ({
+        ...f,
+        images: [...(f.images ?? []), { name: imageName || file.name || "", url: reader.result }],
+      }));
+    };
+    reader.readAsDataURL(file);
   }
 
   async function deleteSkill(id) {
@@ -364,7 +403,9 @@ export default function AdminPage() {
           <section>
             <h2 className="text-lg font-bold text-[#171717] mb-4">Manage Skills</h2>
             {editing.skills !== null ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4 max-h-[85vh] overflow-y-auto">
+                {/* Section A – Basic Info */}
+                <h3 className="text-sm font-semibold text-[#171717] mb-2 border-b border-gray-200 pb-1">A. Info Dasar</h3>
                 <input placeholder="Title" value={form.title ?? ""} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
                 <textarea placeholder="Description" value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" />
                 <select value={form.category ?? "mobile"} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2">
@@ -373,13 +414,51 @@ export default function AdminPage() {
                   ))}
                 </select>
                 <input placeholder="Icon path" value={form.icon ?? ""} onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-4" />
-                <div className="flex gap-2">
+
+                {/* Section B – Related Projects (nama + durasi per proyek) */}
+                <h3 className="text-sm font-semibold text-[#171717] mb-2 border-b border-gray-200 pb-1 mt-4">B. Proyek Terkait</h3>
+                <p className="text-xs text-gray-500 mb-2">Satu proyek = nama proyek + durasi pengembangan. Isi lalu klik Tambah proyek.</p>
+                <div className="flex flex-col sm:flex-row gap-2 mb-2">
+                  <input placeholder="Nama proyek" value={projectNameInput} onChange={(e) => setProjectNameInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkillProject(); } }} className="flex-1 rounded-lg border border-gray-300 px-3 py-2" />
+                  <input placeholder="Durasi (e.g. 3 bulan, Feb 2024 – Mei 2024)" value={projectDurationInput} onChange={(e) => setProjectDurationInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkillProject(); } }} className="flex-1 rounded-lg border border-gray-300 px-3 py-2" />
+                  <button type="button" onClick={addSkillProject} className="rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5] shrink-0">Tambah proyek</button>
+                </div>
+                <ul className="space-y-2 mb-4">
+                  {normalizedRelatedProjects(form).map((p, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      <span className="font-medium text-[#171717]">{p.name}</span>
+                      {p.duration && <span className="text-sm text-gray-500">{p.duration}</span>}
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, relatedProjects: normalizedRelatedProjects(f).filter((_, j) => j !== i) }))} className="text-gray-500 hover:text-red-600 shrink-0" aria-label="Hapus">×</button>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Section C – Certificates / Images */}
+                <h3 className="text-sm font-semibold text-[#171717] mb-2 border-b border-gray-200 pb-1 mt-4">C. Sertifikat / Gambar</h3>
+                <div className="flex flex-wrap gap-4 mb-2">
+                  <input type="text" placeholder="Nama gambar" id="skill-image-name" className="flex-1 min-w-[120px] rounded-lg border border-gray-300 px-3 py-2" />
+                  <label className="inline-flex items-center rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-[#5fb8f5]">
+                    Pilih file
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) { const name = document.getElementById("skill-image-name")?.value?.trim() || f.name; addSkillImage(f, name); e.target.value = ""; } }} />
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                  {(form.images ?? []).map((img, i) => (
+                    <div key={i} className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
+                      <img src={img.url} alt={img.name || ""} className="w-full aspect-square object-cover" />
+                      <p className="p-2 text-xs text-gray-600 truncate">{img.name || "Gambar"}</p>
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, images: (f.images ?? []).filter((_, j) => j !== i) }))} className="absolute top-1 right-1 rounded-full bg-red-500 text-white w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600" aria-label="Hapus">×</button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-2">
                   <button type="button" onClick={saveSkill} className="rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">Simpan</button>
-                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, skills: null })); setForm({}); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, skills: null })); setForm({}); setProjectNameInput(""); setProjectDurationInput(""); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => { setEditing((e) => ({ ...e, skills: "new" })); setForm({ title: "", description: "", category: "mobile", icon: "/svg/hp.svg", projects: [], certifications: [], order: skills.length }); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
+              <button type="button" onClick={() => { setEditing((e) => ({ ...e, skills: "new" })); setForm({ title: "", description: "", category: "mobile", icon: "/svg/hp.svg", relatedProjects: [], images: [], order: skills.length }); setProjectNameInput(""); setProjectDurationInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
                 + Tambah Skill
               </button>
             )}
@@ -392,7 +471,7 @@ export default function AdminPage() {
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, skills: item.id })); setForm({ title: item.title, description: item.description, category: item.category, icon: item.icon ?? "", projects: item.projects ?? [], certifications: item.certifications ?? [], order: item.order ?? 0 }); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, skills: item.id })); setForm({ title: item.title, description: item.description, category: item.category, icon: item.icon ?? "", relatedProjects: item.relatedProjects ?? (item.projects ?? []).map((p) => typeof p === "object" && p && "name" in p ? p : { name: String(p), duration: "" }), images: item.images ?? [], order: item.order ?? 0 }); setProjectNameInput(""); setProjectDurationInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
                     {confirmDelete === item.id ? (
                       <>
                         <button type="button" onClick={() => deleteSkill(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>

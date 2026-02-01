@@ -82,8 +82,14 @@ const DEFAULT_SKILLS = [
     description: "Experience developing mobile applications for academic and personal projects. Focus on UI implementation, feature integration, and app logic.",
     category: "mobile",
     icon: "/svg/hp.svg",
-    projects: ["Academic mobile projects (ITS)", "Personal apps with cross-platform development"],
-    certifications: ["/skills/mobile/mobile-1.png", "/skills/mobile/mobile-2.png"],
+    relatedProjects: [
+      { name: "Academic mobile projects (ITS)", duration: "" },
+      { name: "Personal apps with cross-platform development", duration: "" },
+    ],
+    images: [
+      { name: "Mobile 1", url: "/skills/mobile/mobile-1.png" },
+      { name: "Mobile 2", url: "/skills/mobile/mobile-2.png" },
+    ],
     order: 0,
   },
   {
@@ -91,8 +97,14 @@ const DEFAULT_SKILLS = [
     description: "Experience building web applications using modern frameworks. Implemented responsive UI, business logic, and database integration.",
     category: "website",
     icon: "/svg/web.svg",
-    projects: ["Web Development Intern – PT. Suryasoft Konsultama (Laravel)", "Portfolio and personal websites (Next.js)"],
-    certifications: ["/skills/website-1.jpg", "/skills/website-2.jpg"],
+    relatedProjects: [
+      { name: "Web Development Intern – PT. Suryasoft Konsultama (Laravel)", duration: "" },
+      { name: "Portfolio and personal websites (Next.js)", duration: "" },
+    ],
+    images: [
+      { name: "Website 1", url: "/skills/website-1.jpg" },
+      { name: "Website 2", url: "/skills/website-2.jpg" },
+    ],
     order: 1,
   },
   {
@@ -100,8 +112,11 @@ const DEFAULT_SKILLS = [
     description: "Academic projects related to AI and machine learning. Experience applying AI concepts for problem solving and automation.",
     category: "ai",
     icon: "/svg/ai.svg",
-    projects: ["AI and ML coursework projects (ITS)", "Problem solving and automation projects"],
-    certifications: ["/skills/ai/ai-1.png"],
+    relatedProjects: [
+      { name: "AI and ML coursework projects (ITS)", duration: "" },
+      { name: "Problem solving and automation projects", duration: "" },
+    ],
+    images: [{ name: "AI 1", url: "/skills/ai/ai-1.png" }],
     order: 2,
   },
   {
@@ -109,8 +124,14 @@ const DEFAULT_SKILLS = [
     description: "Experience presenting academic and organizational materials. Participated in seminars, presentations, and public speaking activities. Display certification images related to public speaking.",
     category: "public-speaking",
     icon: "/svg/presentasi.svg",
-    projects: ["Training Speaker / Facilitator – PP LKMM FTEIC (BEM FTEIC ITS)", "Seminars and organizational presentations"],
-    certifications: ["/skills/public_speaking/PPLKMM.png", "/skills/public_speaking/hublu.png"],
+    relatedProjects: [
+      { name: "Training Speaker / Facilitator – PP LKMM FTEIC (BEM FTEIC ITS)", duration: "" },
+      { name: "Seminars and organizational presentations", duration: "" },
+    ],
+    images: [
+      { name: "PPLKMM", url: "/skills/public_speaking/PPLKMM.png" },
+      { name: "Hublu", url: "/skills/public_speaking/hublu.png" },
+    ],
     order: 3,
   },
 ];
@@ -164,10 +185,10 @@ export async function POST(request) {
     await aboutCol.deleteMany({});
     const aboutResult = await aboutCol.insertMany(DEFAULT_ABOUT_ME);
     inserted.about_me = aboutResult.insertedCount;
-    if (skillsCount === 0) {
-      const result = await skillsCol.insertMany(DEFAULT_SKILLS);
-      inserted.skills = result.insertedCount;
-    }
+    // Skills: reset lalu seed penuh agar struktur baru (duration, relatedProjects, images) ter-input
+    await skillsCol.deleteMany({});
+    const skillsResult = await skillsCol.insertMany(DEFAULT_SKILLS);
+    inserted.skills = skillsResult.insertedCount;
     if (portfolioCount === 0) {
       const docs = DEFAULT_PORTFOLIO.map((d) => ({
         ...d,

@@ -117,6 +117,7 @@ export default function Home() {
   const [hasRevealed, setHasRevealed] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedSkillId, setSelectedSkillId] = useState(null);
+  const [skillModalImage, setSkillModalImage] = useState(null);
   const [portfolioFilter, setPortfolioFilter] = useState("all");
   const [portfolioModalImage, setPortfolioModalImage] = useState(null);
   const adminClickCountRef = useRef(0);
@@ -416,7 +417,7 @@ export default function Home() {
             const experienceItems = sorted.filter((s) => s.name === "experience");
             const organizationItems = sorted.filter((s) => s.name === "organization");
             const sectionOrder = [
-              { key: "profile", title: "About Me", items: profileItems, icon: "profile" },
+              { key: "profile", title: "Profile", items: profileItems, icon: "profile" },
               { key: "education", title: "Education", items: educationItems, icon: "education" },
               { key: "experience", title: "Experience", items: experienceItems, icon: "experience" },
               { key: "organization", title: "Organization", items: organizationItems, icon: "organization" },
@@ -620,10 +621,12 @@ export default function Home() {
             {selectedSkillId && (() => {
               const skill = skillsData.find((s) => s.id === selectedSkillId);
               if (!skill) return null;
+              const relatedProjects = skill.relatedProjects ?? skill.projects ?? [];
+              const images = skill.images ?? (skill.certifications ?? []).map((url) => (typeof url === "string" ? { name: "", url } : url));
               return (
                 <div
                   id={`skill-detail-${skill.id}`}
-                  className="skills-detail-inner rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8"
+                  className="skills-detail-inner rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8 max-h-[80vh] overflow-y-auto"
                   role="region"
                   aria-label={`Detail: ${skill.title}`}
                 >
@@ -646,45 +649,60 @@ export default function Home() {
                     <p className="text-gray-600 leading-relaxed">
                       {skill.description}
                     </p>
-                    {skill.projects && skill.projects.length > 0 && (
+                    {relatedProjects.length > 0 && (
                       <div>
                         <h4 className="mb-2 font-semibold text-[#171717]">
                           Proyek terkait
                         </h4>
-                        <ul className="list-disc space-y-1 pl-5 text-gray-600">
-                          {skill.projects.map((project, i) => (
-                            <li key={i}>{project}</li>
-                          ))}
+                        <ul className="list-disc space-y-1.5 pl-5 text-gray-600">
+                          {relatedProjects.map((project, i) => {
+                            const name = typeof project === "object" && project && "name" in project ? project.name : String(project);
+                            const duration = typeof project === "object" && project && "duration" in project ? project.duration : "";
+                            return (
+                              <li key={i}>
+                                {name}
+                                {duration && <span className="text-gray-500"> · {duration}</span>}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     )}
-                    {skill.certifications && skill.certifications.length > 0 && (
+                    {images.length > 0 && (
                       <div>
                         <h4 className="mb-3 font-semibold text-[#171717]">
-                          Certification
+                          Sertifikat / Bukti
                         </h4>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-                          {skill.certifications.map((src, i) => (
-                            <div
-                              key={`${skill.id}-${src}`}
-                              className="relative w-full overflow-hidden rounded-xl bg-gray-100"
-                            >
-                              <img
-                                src={src}
-                                alt=""
-                                className="block w-full max-w-full h-auto"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                  const wrap = e.target.closest("div");
-                                  const fallback = wrap?.querySelector(".skill-certification-fallback");
-                                  if (fallback) fallback.classList.remove("hidden");
-                                }}
-                              />
-                              <span className="skill-certification-fallback absolute inset-0 hidden min-h-[120px] flex items-center justify-center bg-gray-100 text-sm text-gray-400 rounded-xl" aria-hidden>
-                                Sertifikat tidak tersedia
-                              </span>
-                            </div>
-                          ))}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+                          {images.map((img, i) => {
+                            const src = typeof img === "string" ? img : img?.url;
+                            const alt = typeof img === "object" && img?.name ? img.name : "";
+                            if (!src) return null;
+                            return (
+                              <button
+                                key={`${skill.id}-img-${i}`}
+                                type="button"
+                                onClick={() => setSkillModalImage(src)}
+                                className="relative w-full overflow-hidden rounded-xl bg-gray-100 text-left focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2"
+                              >
+                                <img
+                                  src={src}
+                                  alt={alt || "Sertifikat"}
+                                  className="block w-full aspect-square object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                    const wrap = e.target.closest("button");
+                                    const fallback = wrap?.querySelector(".skill-cert-fallback");
+                                    if (fallback) fallback.classList.remove("hidden");
+                                  }}
+                                />
+                                <span className="skill-cert-fallback absolute inset-0 hidden min-h-[120px] flex items-center justify-center bg-gray-100 text-sm text-gray-400 rounded-xl" aria-hidden>
+                                  Gambar tidak tersedia
+                                </span>
+                                {alt && <p className="p-2 text-xs text-gray-600 truncate">{alt}</p>}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -817,6 +835,42 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Skill detail – modal preview gambar sertifikat */}
+      {skillModalImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setSkillModalImage(null)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setSkillModalImage(null);
+          }}
+          aria-label="Tutup preview"
+        >
+          <div
+            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            role="presentation"
+          >
+            <img
+              src={skillModalImage}
+              alt="Preview sertifikat"
+              className="max-h-[90vh] w-auto object-contain"
+            />
+            <button
+              type="button"
+              onClick={() => setSkillModalImage(null)}
+              className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-gray-700 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#7bc8ff]"
+              aria-label="Tutup"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Contact - placeholder */}
       <section
