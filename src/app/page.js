@@ -817,9 +817,9 @@ export default function Home() {
                 key={item.id ?? item.filename}
                 type="button"
                 onClick={() => { setPortfolioModalItem(item); setPortfolioModalImageIndex(0); }}
-                className="portfolio-item group relative overflow-hidden rounded-xl bg-[#e0f2fe] text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 w-full"
+                className="portfolio-item group relative overflow-visible rounded-xl bg-[#e0f2fe] text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 w-full flex flex-col items-stretch"
               >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl w-full bg-[#bae6fd]">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl w-full bg-[#bae6fd] shrink-0">
                   {item.src ? (
                     <img
                       src={item.src}
@@ -839,9 +839,19 @@ export default function Home() {
                     Gambar tidak tersedia
                   </span>
                 </div>
-                <p className="mt-3 px-3 pb-3 text-sm font-medium text-[#171717] truncate" title={(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}>
-                  {(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}
-                </p>
+                <div className="mt-3 px-3 pb-3 flex-1 min-h-0 flex flex-col">
+                  {item.title && (
+                    <p className="text-sm font-semibold text-[#171717] truncate" title={item.title}>{item.title}</p>
+                  )}
+                  <p className="text-sm font-medium text-gray-600 truncate mt-0.5" title={(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}>
+                    {(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}
+                  </p>
+                  {(item.relatedSkills ?? []).length > 0 && (
+                    <p className="text-xs text-gray-500 mt-0.5 break-words">
+                      {(item.relatedSkills ?? []).join(", ")}
+                    </p>
+                  )}
+                </div>
               </button>
             ))}
           </div>
