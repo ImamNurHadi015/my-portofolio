@@ -41,12 +41,14 @@ export function toPublicPortfolio(doc) {
   const categories = Array.isArray(doc.categories) && doc.categories.length > 0
     ? doc.categories
     : (doc.category ? [doc.category] : ["mobile"]);
+  const relatedSkills = Array.isArray(doc.relatedSkills) ? doc.relatedSkills.map((s) => String(s).trim()).filter((s) => s) : [];
   return {
     id: doc._id.toString(),
     title: doc.title ?? "",
     categories,
     description: doc.description ?? "",
     images,
+    relatedSkills,
     createdAt: doc.createdAt?.toISOString?.() ?? null,
   };
 }
@@ -81,11 +83,13 @@ export async function POST(request) {
     }
     const db = await getDb();
     if (!db) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+    const relatedSkills = Array.isArray(body.relatedSkills) ? body.relatedSkills.map((s) => String(s).trim()).filter((s) => s) : [];
     const doc = {
       title: String(title),
       categories: cats,
       description: description != null ? String(description) : "",
       images: imgs,
+      relatedSkills,
       createdAt: new Date(),
     };
     const result = await db.collection(COLLECTION).insertOne(doc);
@@ -115,6 +119,7 @@ export async function PUT(request) {
     if (body.description !== undefined) update.description = String(body.description);
     if (body.images !== undefined) update.images = normalizeImages(body.images);
     else if (body.image !== undefined) update.images = normalizeImages([{ name: "", url: body.image }]);
+    if (body.relatedSkills !== undefined) update.relatedSkills = Array.isArray(body.relatedSkills) ? body.relatedSkills.map((s) => String(s).trim()).filter((s) => s) : [];
     if (Object.keys(update).length === 0) return NextResponse.json({ ok: true });
     const result = await db.collection(COLLECTION).updateOne(
       { _id: new ObjectId(id) },

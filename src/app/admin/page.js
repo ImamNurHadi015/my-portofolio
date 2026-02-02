@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [editing, setEditing] = useState({ about: null, skills: null, portfolio: null, social: null });
   const [form, setForm] = useState({});
   const [skillInput, setSkillInput] = useState("");
+  const [portfolioSkillInput, setPortfolioSkillInput] = useState("");
   const [projectNameInput, setProjectNameInput] = useState("");
   const [projectDurationInput, setProjectDurationInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -181,6 +182,7 @@ export default function AdminPage() {
       categories,
       description: form.description ?? "",
       images: (form.images ?? []).length ? form.images : (form.image ? [{ name: "", url: form.image }] : []),
+      relatedSkills: Array.isArray(form.relatedSkills) ? form.relatedSkills : [],
     };
     const res = await fetch(`${API}/portfolio`, { method: isNew ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(isNew ? body : { id, ...body }), ...fetchOpts });
     if (res.ok) {
@@ -541,6 +543,32 @@ export default function AdminPage() {
                     })}
                   </div>
                 </div>
+                <div className="mb-2">
+                  <p className="text-sm font-medium text-[#171717] mb-2">Skills Terkait (opsional)</p>
+                  <p className="text-xs text-gray-500 mb-1">Ketik skill lalu Enter atau koma untuk tambah.</p>
+                  <input
+                    value={portfolioSkillInput}
+                    onChange={(e) => setPortfolioSkillInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === ",") {
+                        e.preventDefault();
+                        const v = portfolioSkillInput.trim();
+                        if (v) setForm((f) => ({ ...f, relatedSkills: [...(f.relatedSkills ?? []), v] }));
+                        setPortfolioSkillInput("");
+                      }
+                    }}
+                    placeholder="Ketik skill lalu Enter"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {(form.relatedSkills ?? []).map((s, i) => (
+                      <span key={i} className="inline-flex items-center rounded-full bg-[#7bc8ff]/20 px-3 py-1 text-sm text-[#0d7ab8]">
+                        {s}
+                        <button type="button" onClick={() => setForm((f) => ({ ...f, relatedSkills: (f.relatedSkills ?? []).filter((_, j) => j !== i) }))} className="ml-1.5 text-gray-500 hover:text-red-600" aria-label="Hapus">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
                 <textarea placeholder="Description" value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-4" />
                 <h3 className="text-sm font-semibold text-[#171717] mb-2 border-b border-gray-200 pb-1">Gambar Portfolio</h3>
                 <p className="text-xs text-gray-500 mb-2">Nama gambar + unggah file. Minimal satu gambar.</p>
@@ -562,11 +590,11 @@ export default function AdminPage() {
                 </div>
                 <div className="flex gap-2">
                   <button type="button" onClick={savePortfolio} className="rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">Simpan</button>
-                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: null })); setForm({}); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
+                  <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: null })); setForm({}); setPortfolioSkillInput(""); }} className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700">Batal</button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: "new" })); setForm({ title: "", categories: ["mobile"], description: "", images: [] }); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
+              <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: "new" })); setForm({ title: "", categories: ["mobile"], description: "", images: [], relatedSkills: [] }); setPortfolioSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
                 + Tambah Portfolio
               </button>
             )}
@@ -576,10 +604,15 @@ export default function AdminPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-[#171717]">{item.title}</p>
                     <p className="text-sm text-gray-500">{(item.categories ?? (item.category ? [item.category] : [])).map((cid) => categories.find((c) => c.id === cid)?.label ?? cid).join(", ")}</p>
+                    {(item.relatedSkills ?? []).length > 0 && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Skills: {(item.relatedSkills ?? []).join(", ")}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500 truncate">{(item.images ?? []).length} gambar</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: item.id })); setForm({ title: item.title, categories: item.categories ?? (item.category ? [item.category] : ["mobile"]), description: item.description ?? "", images: item.images ?? [] }); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: item.id })); setForm({ title: item.title, categories: item.categories ?? (item.category ? [item.category] : ["mobile"]), description: item.description ?? "", images: item.images ?? [], relatedSkills: item.relatedSkills ?? [] }); setPortfolioSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
                     {confirmDelete === item.id ? (
                       <>
                         <button type="button" onClick={() => deletePortfolio(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>

@@ -167,6 +167,7 @@ export default function Home() {
                   categoryIds,
                   images,
                   src,
+                  relatedSkills: p.relatedSkills ?? [],
                 };
               })
             : []
