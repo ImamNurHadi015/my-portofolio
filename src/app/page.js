@@ -815,9 +815,9 @@ export default function Home() {
                 key={item.id ?? item.filename}
                 type="button"
                 onClick={() => { setPortfolioModalItem(item); setPortfolioModalImageIndex(0); }}
-                className="portfolio-item group relative overflow-hidden rounded-xl bg-gray-100 text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 w-full"
+                className="portfolio-item group relative overflow-hidden rounded-xl bg-[#e0f2fe] text-left transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7bc8ff] focus:ring-offset-2 w-full"
               >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl w-full">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl w-full bg-[#bae6fd]">
                   {item.src ? (
                     <img
                       src={item.src}
@@ -831,11 +831,11 @@ export default function Home() {
                       }}
                     />
                   ) : null}
-                  <span className="portfolio-item-fallback absolute inset-0 hidden flex items-center justify-center text-sm text-gray-400 bg-gray-100 rounded-xl" aria-hidden>
+                  <span className="portfolio-item-fallback absolute inset-0 hidden flex items-center justify-center text-sm text-gray-500 bg-[#bae6fd] rounded-xl" aria-hidden>
                     Gambar tidak tersedia
                   </span>
                 </div>
-                <p className="mt-3 text-sm font-medium text-[#171717] truncate">
+                <p className="mt-3 px-3 pb-3 text-sm font-medium text-[#171717] truncate" title={(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}>
                   {(item.categoryIds ?? []).map((cid) => portfolioCategoryLabels[cid]).filter(Boolean).join(", ")}
                 </p>
               </button>
