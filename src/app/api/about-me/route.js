@@ -10,7 +10,7 @@ function isAdmin(request) {
   return verifyAdminCookie(cookie);
 }
 
-function toPublicDoc(doc) {
+export function toPublicDoc(doc) {
   const out = {
     id: doc._id.toString(),
     name: doc.name,
@@ -42,7 +42,11 @@ export async function GET() {
     const db = await getDb();
     if (!db) return NextResponse.json([]);
     const list = await db.collection(COLLECTION).find({}).sort({ order: 1, _id: 1 }).toArray();
-    return NextResponse.json(list.map(toPublicDoc));
+    return NextResponse.json(list.map(toPublicDoc), {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (err) {
     console.error("about-me GET", err);
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });

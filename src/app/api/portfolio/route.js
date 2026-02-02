@@ -34,7 +34,7 @@ function normalizeImages(arr) {
   }).filter((item) => item.url);
 }
 
-function toPublicPortfolio(doc) {
+export function toPublicPortfolio(doc) {
   const images = Array.isArray(doc.images) && doc.images.length > 0
     ? doc.images
     : (doc.image ? [{ name: doc.title ?? "", url: doc.image }] : []);
@@ -56,7 +56,11 @@ export async function GET() {
     const db = await getDb();
     if (!db) return NextResponse.json([]);
     const list = await db.collection(COLLECTION).find({}).sort({ createdAt: -1 }).toArray();
-    return NextResponse.json(list.map(toPublicPortfolio));
+    return NextResponse.json(list.map(toPublicPortfolio), {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (err) {
     console.error("portfolio GET", err);
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });

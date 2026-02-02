@@ -23,7 +23,7 @@ function normalizeRelatedProjects(arr) {
   }).filter((item) => item.name);
 }
 
-function toPublicSkill(doc) {
+export function toPublicSkill(doc) {
   const raw = doc.relatedProjects ?? doc.projects ?? [];
   const relatedProjects = Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object" && raw[0] !== null && ("name" in raw[0] || "duration" in raw[0])
     ? normalizeRelatedProjects(raw)
@@ -48,7 +48,11 @@ export async function GET() {
     const db = await getDb();
     if (!db) return NextResponse.json([]);
     const list = await db.collection(COLLECTION).find({}).sort({ order: 1, _id: 1 }).toArray();
-    return NextResponse.json(list.map(toPublicSkill));
+    return NextResponse.json(list.map(toPublicSkill), {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (err) {
     console.error("skills GET", err);
     return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });

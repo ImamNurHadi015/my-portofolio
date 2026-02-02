@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -137,19 +137,21 @@ export default function Home() {
   const [socialLinksFromApi, setSocialLinksFromApi] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
 
+  // Optimasi: memoize filtered portfolio items
+  const filteredPortfolioItems = useMemo(() => {
+    if (portfolioFilter === "all") return portfolioItems;
+    return portfolioItems.filter((i) => (i.categoryIds ?? []).includes(portfolioFilter));
+  }, [portfolioItems, portfolioFilter]);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const [aboutRes, skillsRes, portfolioRes, socialRes] = await Promise.all([
-          fetch("/api/about-me", { credentials: "include" }),
-          fetch("/api/skills", { credentials: "include" }),
-          fetch("/api/portfolio", { credentials: "include" }),
-          fetch("/api/social-links", { credentials: "include" }),
-        ]);
-        const about = aboutRes.ok ? await aboutRes.json() : [];
-        const skills = skillsRes.ok ? await skillsRes.json() : [];
-        const portfolio = portfolioRes.ok ? await portfolioRes.json() : [];
-        const social = socialRes.ok ? await socialRes.json() : [];
+        const res = await fetch("/api/data", { credentials: "include" });
+        const data = res.ok ? await res.json() : {};
+        const about = data.aboutMe ?? [];
+        const skills = data.skills ?? [];
+        const portfolio = data.portfolio ?? [];
+        const social = data.socialLinks ?? [];
         setAboutSections(Array.isArray(about) ? about : []);
         setSkillsData(Array.isArray(skills) ? skills : []);
         setPortfolioItems(
@@ -718,6 +720,8 @@ export default function Home() {
                                         <img
                                           src={src}
                                           alt={alt || "Sertifikat"}
+                                          loading="lazy"
+                                          decoding="async"
                                           className="block h-auto max-h-[36vh] w-auto object-contain"
                                           onError={(e) => {
                                             e.target.style.display = "none";
@@ -806,11 +810,8 @@ export default function Home() {
           ) : portfolioItems.length === 0 ? (
             <p className="text-gray-500 py-8">Belum ada data.</p>
           ) : (
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {(portfolioFilter === "all"
-              ? portfolioItems
-              : portfolioItems.filter((i) => (i.categoryIds ?? []).includes(portfolioFilter))
-            ).map((item) => (
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredPortfolioItems.map((item) => (
               <button
                 key={item.id ?? item.filename}
                 type="button"
@@ -822,6 +823,8 @@ export default function Home() {
                     <img
                       src={item.src}
                       alt={item.title ?? ""}
+                      loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={(e) => {
                         e.target.style.display = "none";
@@ -885,6 +888,7 @@ export default function Home() {
                   <img
                     src={src}
                     alt={current?.name || portfolioModalItem.title || "Preview"}
+                    loading="eager"
                     className="max-h-[90vh] w-auto object-contain"
                   />
                 )}

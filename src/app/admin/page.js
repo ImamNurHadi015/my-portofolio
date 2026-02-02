@@ -36,16 +36,12 @@ export default function AdminPage() {
   async function load() {
     setLoading(true);
     try {
-      const [a, s, p, soc] = await Promise.all([
-        fetch(`${API}/about-me`, fetchOpts).then((r) => r.json()),
-        fetch(`${API}/skills`, fetchOpts).then((r) => r.json()),
-        fetch(`${API}/portfolio`, fetchOpts).then((r) => r.json()),
-        fetch(`${API}/social-links`, fetchOpts).then((r) => r.json()),
-      ]);
-      if (Array.isArray(a)) setAboutMe(a);
-      if (Array.isArray(s)) setSkills(s);
-      if (Array.isArray(p)) setPortfolio(p);
-      if (Array.isArray(soc)) setSocialLinks(soc);
+      const res = await fetch(`${API}/data`, fetchOpts);
+      const data = res.ok ? await res.json() : {};
+      if (Array.isArray(data.aboutMe)) setAboutMe(data.aboutMe);
+      if (Array.isArray(data.skills)) setSkills(data.skills);
+      if (Array.isArray(data.portfolio)) setPortfolio(data.portfolio);
+      if (Array.isArray(data.socialLinks)) setSocialLinks(data.socialLinks);
     } catch (e) {
       console.error(e);
     } finally {

@@ -2,12 +2,20 @@ import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI;
 
+// Opsi untuk serverless (Vercel): timeout lebih pendek, satu koneksi dipakai ulang
+const options = {
+  maxPoolSize: 10,
+  minPoolSize: 1,
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+};
+
 let clientPromise = null;
 if (uri) {
   if (process.env.NODE_ENV === "development" && global._mongoClientPromise) {
     clientPromise = global._mongoClientPromise;
   } else {
-    const client = new MongoClient(uri);
+    const client = new MongoClient(uri, options);
     clientPromise = client.connect().catch((err) => {
       console.error("MongoDB connection error:", err.message);
       return null;
