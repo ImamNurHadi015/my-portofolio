@@ -110,6 +110,8 @@ const ADMIN_CLICK_WINDOW_MS = 3000;
 export default function Home() {
   const router = useRouter();
   const [navbarScrolled, setNavbarScrolled] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
   const aboutRef = useRef(null);
   const portfolioRef = useRef(null);
   const [aboutVisible, setAboutVisible] = useState(false);
@@ -201,6 +203,18 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Responsif: deteksi layar sempit untuk hero SVG & tutup menu saat resize
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const update = () => {
+      setIsNarrow(mq.matches);
+      if (!mq.matches) setNavOpen(false);
+    };
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
   // Animasi muncul saat section masuk viewport
   useEffect(() => {
     const aboutEl = aboutRef.current;
@@ -231,56 +245,99 @@ export default function Home() {
       {/* Navbar: transparan di halaman utama, berwarna #7bc8ff setelah scroll */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          navbarScrolled ? "bg-[#7bc8ff] shadow-md" : "bg-transparent"
+          navbarScrolled || navOpen ? "bg-[#7bc8ff] shadow-md" : "bg-transparent"
         }`}
       >
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-8">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 md:px-8 md:py-4">
           <Link
             href="#"
-            className={`text-xl font-bold tracking-tight transition-colors md:text-2xl ${
+            onClick={() => setNavOpen(false)}
+            className={`text-lg font-bold tracking-tight transition-colors sm:text-xl md:text-2xl ${
               navbarScrolled ? "text-white" : "text-[#171717]"
             }`}
           >
             IN
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-3 md:gap-4">
+          {/* Desktop: link horizontal */}
+          <div className="hidden items-center justify-end gap-2 md:flex md:gap-4">
             {navLinks.map((link) => {
               const isPutih = link.style === "putih";
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`nav-link inline-flex rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ease-out select-none sm:inline-flex
+                  className={`nav-link inline-flex rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ease-out select-none
                     hover:-translate-y-1 active:translate-y-0.5 active:scale-[0.97] active:shadow-inner
-                    ${
-                      isPutih
-                        ? "bg-white/25 text-white hover:bg-white/40"
-                        : "bg-white text-[#7bc8ff] hover:bg-gray-100"
-                    }`}
+                    ${isPutih ? "bg-white/25 text-white hover:bg-white/40" : "bg-white text-[#7bc8ff] hover:bg-gray-100"}`}
                 >
                   {link.label}
                 </Link>
               );
             })}
           </div>
+          {/* Mobile: hamburger + dropdown */}
+          <button
+            type="button"
+            onClick={() => setNavOpen((o) => !o)}
+            className={`flex h-10 w-10 items-center justify-center rounded-lg md:hidden ${
+              navbarScrolled ? "text-white hover:bg-white/20" : "text-[#171717] hover:bg-black/5"
+            }`}
+            aria-label={navOpen ? "Tutup menu" : "Buka menu"}
+            aria-expanded={navOpen}
+          >
+            {navOpen ? (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
         </nav>
+        {/* Mobile dropdown - langsung menempel di bawah nav, tanpa jarak */}
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-out md:hidden ${
+            navOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="border-t border-white/20 bg-[#7bc8ff]/95 px-4 pt-0 pb-2 shadow-lg backdrop-blur sm:px-6">
+            <div className="flex flex-col gap-1">
+              {navLinks.map((link) => {
+                const isPutih = link.style === "putih";
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setNavOpen(false)}
+                    className={`rounded-full px-4 py-2.5 text-center text-sm font-medium transition
+                      ${isPutih ? "bg-white/25 text-white hover:bg-white/40" : "bg-white text-[#7bc8ff] hover:bg-gray-100"}`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Hero Section - Diagonal Split dengan Biru Dominan */}
-      <section className="relative min-h-screen bg-[#7bc8ff] pt-[72px] md:pt-20">
-        <div className="grid min-h-[calc(100vh-72px)] md:grid-cols-[45%_55%] md:min-h-[calc(100vh-80px)]">
+      <section className="relative min-h-screen bg-[#7bc8ff] pt-14 sm:pt-16 md:pt-20">
+        <div className="grid min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)] md:grid-cols-[45%_55%] md:min-h-[calc(100vh-80px)]">
           {/* Bagian Kiri - Teks (Putih dengan Slant) */}
-          <div className="hero-left-clip relative z-10 flex flex-col justify-center bg-white px-8 py-16 md:-mt-20 md:px-12 md:pt-40 lg:px-20">
-            <p className="text-sm font-medium uppercase tracking-wider text-gray-600 md:text-base">
+          <div className="hero-left-clip relative z-10 flex flex-col justify-center bg-white px-5 py-10 sm:px-8 sm:py-12 md:-mt-20 md:px-12 md:py-16 md:pt-40 lg:px-20">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-600 sm:text-sm md:text-base">
               Hi, I am
             </p>
-            <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#171717] md:text-5xl lg:text-6xl">
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#171717] sm:mt-2 sm:text-4xl md:text-5xl lg:text-6xl">
               Imam Nurhadi
             </h1>
-            <p className="mt-3 text-lg text-gray-600 md:text-xl">
+            <p className="mt-2 text-base text-gray-600 sm:mt-3 sm:text-lg md:text-xl">
               Mobile & Web Full-Stack Developer | AI Implementation
             </p>
-            <div className="mt-8 flex gap-4">
+            <div className="mt-6 flex flex-wrap gap-3 sm:mt-8 sm:gap-4">
               {socialLinksFromApi.map((social) => (
                 <a
                   key={social.id}
@@ -297,41 +354,44 @@ export default function Home() {
           </div>
 
           {/* Bagian Kanan - Foto Profil + SVG: sembunyi di belakang lingkaran, lalu muncul; klik = flip ke Aha */}
-          <div className="relative flex min-h-[50vh] items-center justify-center md:min-h-[calc(100vh-80px)]">
-            <div className="relative h-full w-full md:flex md:items-center md:justify-center">
-              {/* SVG bertaburan: awalnya sembunyi (scale 0) di posisinya, lalu muncul dengan animasi */}
-              {scatteredSvgs.map((item, i) => (
-                <div
-                  key={i}
-                  className={`absolute z-10 hero-svg-item transition-transform duration-300 hover:scale-110 ${
-                    hasRevealed ? "revealed" : ""
-                  }`}
-                  style={{
-                    top: item.top,
-                    bottom: item.bottom,
-                    left: item.left,
-                    right: item.right,
-                    width: item.size,
-                    height: item.size,
-                    transform: hasRevealed
-                      ? `rotate(${item.rotate}deg) scale(1)`
-                      : "scale(0)",
-                    opacity: hasRevealed ? 0.8 : 0,
-                    transition: "opacity 0.5s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                    transitionDelay: hasRevealed ? `${200 + i * 70}ms` : "0ms",
-                  }}
-                >
-                  <img
-                    src={item.src}
-                    alt=""
-                    className="h-full w-full object-contain drop-shadow-lg [filter:brightness(0)_invert(1)]"
-                    aria-hidden
-                  />
-                </div>
-              ))}
-              {/* Lingkaran: konten di dalam awalnya scale kecil (bersembunyi), lalu reveal; klik = flip coin ke Aha */}
-              <div className="relative z-0 flex h-[70vh] max-h-[600px] w-full items-center justify-center md:h-[85vh]">
-                <div className="relative h-[min(48vh,360px)] w-[min(48vh,360px)] rounded-full overflow-hidden bg-white shadow-xl ring-4 ring-white/60 md:h-[min(58vh,390px)] md:w-[min(58vh,390px)]">
+          <div className="relative flex min-h-[45vh] items-center justify-center sm:min-h-[50vh] md:min-h-[calc(100vh-80px)]">
+            <div className="relative h-full w-full max-w-full md:flex md:items-center md:justify-center">
+              {/* SVG bertaburan: ukuran & posisi responsif (kecil di mobile) */}
+              {scatteredSvgs.map((item, i) => {
+                const size = isNarrow ? Math.max(22, Math.round(item.size * 0.45)) : item.size;
+                return (
+                  <div
+                    key={i}
+                    className={`absolute z-10 hero-svg-item transition-transform duration-300 hover:scale-110 ${
+                      hasRevealed ? "revealed" : ""
+                    }`}
+                    style={{
+                      top: item.top,
+                      bottom: item.bottom,
+                      left: item.left,
+                      right: item.right,
+                      width: size,
+                      height: size,
+                      transform: hasRevealed
+                        ? `rotate(${item.rotate}deg) scale(1)`
+                        : "scale(0)",
+                      opacity: hasRevealed ? 0.8 : 0,
+                      transition: "opacity 0.5s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                      transitionDelay: hasRevealed ? `${200 + i * 70}ms` : "0ms",
+                    }}
+                  >
+                    <img
+                      src={item.src}
+                      alt=""
+                      className="h-full w-full object-contain drop-shadow-lg [filter:brightness(0)_invert(1)]"
+                      aria-hidden
+                    />
+                  </div>
+                );
+              })}
+              {/* Lingkaran: ukuran responsif; konten reveal + flip ke Aha */}
+              <div className="relative z-0 flex h-[60vh] max-h-[320px] w-full items-center justify-center sm:h-[70vh] sm:max-h-[400px] md:h-[85vh] md:max-h-[600px]">
+                <div className="relative h-[min(42vh,280px)] w-[min(42vh,280px)] shrink-0 rounded-full overflow-hidden bg-white shadow-xl ring-2 ring-white/60 sm:h-[min(48vh,340px)] sm:w-[min(48vh,340px)] sm:ring-4 md:h-[min(58vh,390px)] md:w-[min(58vh,390px)]">
                   <div
                     className={`absolute inset-0 scale-110 hero-circle-content ${
                       hasRevealed ? "revealed" : ""
