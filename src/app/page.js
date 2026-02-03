@@ -355,7 +355,7 @@ export default function Home() {
 
           {/* Bagian Kanan - Foto Profil + SVG: sembunyi di belakang lingkaran, lalu muncul; klik = flip ke Aha */}
           <div className="relative flex min-h-[45vh] items-center justify-center sm:min-h-[50vh] md:min-h-[calc(100vh-80px)]">
-            <div className="relative h-full w-full max-w-full md:flex md:items-center md:justify-center">
+            <div className="relative flex h-full w-full max-w-full items-center justify-center md:items-center md:justify-center">
               {/* SVG bertaburan: ukuran & posisi responsif (kecil di mobile) */}
               {scatteredSvgs.map((item, i) => {
                 const size = isNarrow ? Math.max(22, Math.round(item.size * 0.45)) : item.size;
