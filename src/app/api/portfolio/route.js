@@ -42,6 +42,7 @@ export function toPublicPortfolio(doc) {
     ? doc.categories
     : (doc.category ? [doc.category] : ["mobile"]);
   const relatedSkills = Array.isArray(doc.relatedSkills) ? doc.relatedSkills.map((s) => String(s).trim()).filter((s) => s) : [];
+  const githubUrl = doc.githubUrl != null && String(doc.githubUrl).trim() ? String(doc.githubUrl).trim() : null;
   return {
     id: doc._id.toString(),
     title: doc.title ?? "",
@@ -49,6 +50,7 @@ export function toPublicPortfolio(doc) {
     description: doc.description ?? "",
     images,
     relatedSkills,
+    githubUrl: githubUrl || undefined,
     createdAt: doc.createdAt?.toISOString?.() ?? null,
   };
 }
@@ -84,12 +86,14 @@ export async function POST(request) {
     const db = await getDb();
     if (!db) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     const relatedSkills = Array.isArray(body.relatedSkills) ? body.relatedSkills.map((s) => String(s).trim()).filter((s) => s) : [];
+    const githubUrl = body.githubUrl != null ? String(body.githubUrl).trim() || null : null;
     const doc = {
       title: String(title),
       categories: cats,
       description: description != null ? String(description) : "",
       images: imgs,
       relatedSkills,
+      githubUrl: githubUrl || undefined,
       createdAt: new Date(),
     };
     const result = await db.collection(COLLECTION).insertOne(doc);
@@ -120,6 +124,7 @@ export async function PUT(request) {
     if (body.images !== undefined) update.images = normalizeImages(body.images);
     else if (body.image !== undefined) update.images = normalizeImages([{ name: "", url: body.image }]);
     if (body.relatedSkills !== undefined) update.relatedSkills = Array.isArray(body.relatedSkills) ? body.relatedSkills.map((s) => String(s).trim()).filter((s) => s) : [];
+    if (body.githubUrl !== undefined) update.githubUrl = body.githubUrl != null && String(body.githubUrl).trim() ? String(body.githubUrl).trim() : null;
     if (Object.keys(update).length === 0) return NextResponse.json({ ok: true });
     const result = await db.collection(COLLECTION).updateOne(
       { _id: new ObjectId(id) },

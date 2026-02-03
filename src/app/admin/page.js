@@ -183,6 +183,7 @@ export default function AdminPage() {
       description: form.description ?? "",
       images: (form.images ?? []).length ? form.images : (form.image ? [{ name: "", url: form.image }] : []),
       relatedSkills: Array.isArray(form.relatedSkills) ? form.relatedSkills : [],
+      githubUrl: form.githubUrl != null ? String(form.githubUrl).trim() || null : null,
     };
     const res = await fetch(`${API}/portfolio`, { method: isNew ? "POST" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(isNew ? body : { id, ...body }), ...fetchOpts });
     if (res.ok) {
@@ -569,6 +570,7 @@ export default function AdminPage() {
                     ))}
                   </div>
                 </div>
+                <input placeholder="Link GitHub (opsional)" value={form.githubUrl ?? ""} onChange={(e) => setForm((f) => ({ ...f, githubUrl: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-2" type="url" />
                 <textarea placeholder="Description" value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-4" />
                 <h3 className="text-sm font-semibold text-[#171717] mb-2 border-b border-gray-200 pb-1">Gambar Portfolio</h3>
                 <p className="text-xs text-gray-500 mb-2">Nama gambar + unggah file. Minimal satu gambar.</p>
@@ -594,7 +596,7 @@ export default function AdminPage() {
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: "new" })); setForm({ title: "", categories: ["mobile"], description: "", images: [], relatedSkills: [] }); setPortfolioSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
+              <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: "new" })); setForm({ title: "", categories: ["mobile"], description: "", images: [], relatedSkills: [], githubUrl: "" }); setPortfolioSkillInput(""); }} className="mb-4 rounded-full bg-[#7bc8ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#5fb8f5]">
                 + Tambah Portfolio
               </button>
             )}
@@ -612,7 +614,7 @@ export default function AdminPage() {
                     <p className="text-sm text-gray-500 truncate">{(item.images ?? []).length} gambar</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: item.id })); setForm({ title: item.title, categories: item.categories ?? (item.category ? [item.category] : ["mobile"]), description: item.description ?? "", images: item.images ?? [], relatedSkills: item.relatedSkills ?? [] }); setPortfolioSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
+                    <button type="button" onClick={() => { setEditing((e) => ({ ...e, portfolio: item.id })); setForm({ title: item.title, categories: item.categories ?? (item.category ? [item.category] : ["mobile"]), description: item.description ?? "", images: item.images ?? [], relatedSkills: item.relatedSkills ?? [], githubUrl: item.githubUrl ?? "" }); setPortfolioSkillInput(""); }} className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Edit</button>
                     {confirmDelete === item.id ? (
                       <>
                         <button type="button" onClick={() => deletePortfolio(item.id)} className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white">Yakin Hapus?</button>
