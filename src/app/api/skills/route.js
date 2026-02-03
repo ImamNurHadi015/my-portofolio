@@ -15,6 +15,10 @@ function validCategory(cat) {
   return CATEGORIES.includes(cat);
 }
 
+function isValidObjectId(id) {
+  return typeof id === "string" && /^[a-f0-9]{24}$/i.test(id);
+}
+
 function normalizeRelatedProjects(arr) {
   if (!Array.isArray(arr)) return [];
   return arr.map((item) => {
@@ -105,7 +109,7 @@ export async function PUT(request) {
   try {
     const body = await request.json();
     const id = body.id;
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    if (!id || !isValidObjectId(id)) return NextResponse.json({ error: "Missing or invalid id" }, { status: 400 });
     const db = await getDb();
     if (!db) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     const update = {};
@@ -137,7 +141,7 @@ export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    if (!id || !isValidObjectId(id)) return NextResponse.json({ error: "Missing or invalid id" }, { status: 400 });
     const db = await getDb();
     if (!db) return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     const result = await db.collection(COLLECTION).deleteOne({ _id: new ObjectId(id) });
