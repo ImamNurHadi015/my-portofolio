@@ -383,6 +383,8 @@ export default function Home() {
                     <img
                       src={item.src}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-contain drop-shadow-lg [filter:brightness(0)_invert(1)]"
                       aria-hidden
                     />
@@ -468,7 +470,7 @@ export default function Home() {
       <section
         ref={aboutRef}
         id="about"
-        className={`scroll-mt-20 bg-white px-8 py-20 transition-all duration-700 md:px-12 lg:px-20 ${
+        className={`section-below-fold scroll-mt-20 bg-white px-8 py-20 transition-all duration-700 md:px-12 lg:px-20 ${
           aboutVisible
             ? "translate-y-0 opacity-100"
             : "translate-y-10 opacity-0"
@@ -641,7 +643,7 @@ export default function Home() {
       {/* Skills - kartu klik, detail expand di bawah */}
       <section
         id="skills"
-        className="scroll-mt-20 bg-gray-50 px-8 py-20 md:px-12 lg:px-20"
+        className="section-below-fold scroll-mt-20 bg-gray-50 px-8 py-20 md:px-12 lg:px-20"
       >
         <div className="mx-auto max-w-5xl">
           <h2 className="text-3xl font-bold text-[#171717] mb-4">Skills</h2>
@@ -677,6 +679,8 @@ export default function Home() {
                   <img
                     src={skill.icon}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="h-8 w-8 object-contain [filter:brightness(0)_saturate(100%)_invert(58%)_sepia(69%)_saturate(1200%)_hue-rotate(186deg)_brightness(101%)_contrast(97%)]"
                     aria-hidden
                   />
@@ -836,7 +840,7 @@ export default function Home() {
       <section
         ref={portfolioRef}
         id="portfolio"
-        className={`scroll-mt-20 bg-white px-8 py-20 transition-all duration-700 md:px-12 lg:px-20 ${
+        className={`section-below-fold scroll-mt-20 bg-white px-8 py-20 transition-all duration-700 md:px-12 lg:px-20 ${
           portfolioVisible
             ? "translate-y-0 opacity-100"
             : "translate-y-10 opacity-0"
@@ -1029,6 +1033,8 @@ export default function Home() {
             <img
               src={skillModalImage}
               alt="Preview sertifikat"
+              loading="eager"
+              decoding="async"
               className="max-h-[90vh] w-auto object-contain"
             />
             <button
@@ -1048,7 +1054,7 @@ export default function Home() {
       {/* Contact - placeholder */}
       <section
         id="contact"
-        className="scroll-mt-20 bg-gray-50 px-8 py-20 md:px-12 lg:px-20"
+        className="section-below-fold scroll-mt-20 bg-gray-50 px-8 py-20 md:px-12 lg:px-20"
       >
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold text-[#171717]">Contact Me</h2>

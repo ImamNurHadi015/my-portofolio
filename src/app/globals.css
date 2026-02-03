@@ -25,6 +25,12 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Lazy rendering: browser bisa menunda paint section di bawah fold sampai mendekati viewport */
+.section-below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
 /* Hero diagonal clip - bagian kiri (putih) */
 .hero-left-clip {
   /* Slant miring: atas lebih lebar dari bawah untuk efek miring ke kiri */
